@@ -3,7 +3,7 @@ CONFIGFILE="config"
 KVER="5.14"
 PVER="_p1-pf"
 KERNVER="${KVER}${PVER}"
-USRDIR="/usr/src/usr-pf-$KVER"
+USRDIR="/usr/src/usr-kernel/$KVER"
 ARCHVER=40
 JOBS="-j4"
 
