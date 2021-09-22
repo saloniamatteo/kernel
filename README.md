@@ -31,8 +31,8 @@ git clone https://github.com/saloniamatteo/kernel
 cd usr-kernel
 
 # Select the latest version
-# (example: 5.14_p1 for Kernel version 5.14 patch 1)
-cd 5.14-p1
+# (example: 5.14_p1-pf for Kernel version 5.14 patch 1)
+cd 5.14_p1-pf
  
 # Make sure we can execute the script
 chmod +x build.sh
@@ -60,7 +60,7 @@ make menuconfig
 # following commands as root:
 
 # Go where your custom directory is
-cd /usr/src/usr-kernel/5.14-p1
+cd /usr/src/usr-kernel/5.14_p1-pf
 
 # Run the script to build the Kernel
 # Add the -e option if you want to use ccache
