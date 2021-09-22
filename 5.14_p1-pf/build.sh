@@ -3,7 +3,7 @@ CONFIGFILE="config"
 KVER="5.14"
 PVER="_p1-pf"
 KERNVER="${KVER}${PVER}"
-USRDIR="/usr/src/usr-kernel/$KVER"
+USRDIR="/usr/src/usr-kernel/$KERNVER"
 ARCHVER=40
 JOBS="-j4"
 
@@ -19,10 +19,33 @@ else
 fi
 fi
 
+# Check if user directory exists
+if [ ! -d "$USRDIR" ]; then
+	echo "Could not find Custom Kernel directory! "
+	exit -2
+fi
+
+# Check that required files exist in user directory
+# Note: we don't check if patches exist because
+# we can apply them optionally;
+# we don't check for build.sh because
+# how are we running this script?
+if [ ! -f "$USRDIR/config" ]; then
+	echo "Config is missing from Custom Kernel directory! "
+	exit -3
+else if [ ! -f "$USRDIR/modprobed.db" ]; then
+	echo "Modprobed.db is missing from Custom Kernel directory! "
+	exit -4
+fi
+fi
+
 # If argument is "-h" or "--help", print exit codes
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 	printf "Exit codes:
--2		Successfully printed help
+-10		Successfully printed help
+-4		Modprobed.db is missing from Custom Kernel directory
+-3		Config is missing from Custom Kernel directory
+-2		Could not find Custom Kernel directory
 -1		Could not find Kernel directory
 00		Successfully built Kernel
 01		Failed to copy config
@@ -55,7 +78,7 @@ USRDIR=$USRDIR
 ARCHVER=$ARCHVER
 JOBS=$JOBS
 "
-	exit -2
+	exit -10
 fi
 
 cd $KERNELDIR
@@ -73,11 +96,14 @@ echo "Copying modprobed.db" &&
 cp $USRDIR/modprobed.db $KERNELDIR ||
 exit 3
 
+# Optionally apply patches
 echo "Copying patches" &&
-cp $USRDIR/*.patch $KERNELDIR || exit 7
-for p in $(ls | grep "*.patch"); do
-	[[ $p = 0*.patch ]] && echo "Applying patch $p..." && patch -Np1 -i $p
-done
+if [ ! -n "$(echo *.patch)" ]; then
+	cp $USRDIR/*.patch $KERNELDIR || exit 7
+	for p in "*.patch"; do
+		echo "Applying patch $p..." && patch -Np1 -i $p
+	done
+fi
 
 echo "Setting config values" &&
 scripts/config --disable CONFIG_DEBUG_INFO &&
