@@ -4,8 +4,54 @@ KVER="5.14"
 PVER="_p1-pf"
 KERNVER="${KVER}${PVER}"
 USRDIR="/usr/src/usr-kernel/$KERNVER"
-ARCHVER=40
+ARCHVER=24
 JOBS="-j4"
+
+# Note: ARCHVER is the sub-architecture number,
+# which will be used to apply optimizations for your specific CPU.
+# Down below is a list of numbers and their corresponding CPU.
+#
+#   1. AMD Opteron/Athlon64/Hammer/K8 (MK8)
+#   2. AMD Opteron/Athlon64/Hammer/K8 with SSE3 (MK8SSE3)
+#   3. AMD 61xx/7x50/PhenomX3/X4/II/K10 (MK10)
+#   4. AMD Barcelona (MBARCELONA)
+#   5. AMD Bobcat (MBOBCAT)
+#   6. AMD Jaguar (MJAGUAR)
+#   7. AMD Bulldozer (MBULLDOZER)
+#   8. AMD Piledriver (MPILEDRIVER)
+#   9. AMD Steamroller (MSTEAMROLLER)
+#  10. AMD Excavator (MEXCAVATOR)
+#  11. AMD Zen (MZEN)
+#  12. AMD Zen 2 (MZEN2)
+#  13. AMD Zen 3 (MZEN3)
+#  14. Intel P4 / older Netburst based Xeon (MPSC)
+#  15. Intel Core 2 (MCORE2)
+#  16. Intel Atom (MATOM)
+#  17. Intel Nehalem (MNEHALEM)
+#  18. Intel Westmere (MWESTMERE)
+#  19. Intel Silvermont (MSILVERMONT)
+#  20. Intel Goldmont (MGOLDMONT)
+#  21. Intel Goldmont Plus (MGOLDMONTPLUS)
+#  22. Intel Sandy Bridge (MSANDYBRIDGE)
+#  23. Intel Ivy Bridge (MIVYBRIDGE)
+#  24. Intel Haswell (MHASWELL)
+#  25. Intel Broadwell (MBROADWELL)
+#  26. Intel Skylake (MSKYLAKE)
+#  27. Intel Skylake X (MSKYLAKEX)
+#  28. Intel Cannon Lake (MCANNONLAKE)
+#  29. Intel Ice Lake (MICELAKE)
+#  30. Intel Cascade Lake (MCASCADELAKE)
+#  31. Intel Cooper Lake (MCOOPERLAKE)
+#  32. Intel Tiger Lake (MTIGERLAKE)
+#  33. Intel Sapphire Rapids (MSAPPHIRERAPIDS)
+#  34. Intel Rocket Lake (MROCKETLAKE)
+#  35. Intel Alder Lake (MALDERLAKE)
+#  36. Generic-x86-64 (GENERIC_CPU)
+#  37. Generic-x86-64-v2 (GENERIC_CPU2)
+#  38. Generic-x86-64-v3 (GENERIC_CPU3)
+#  39. Generic-x86-64-v4 (GENERIC_CPU4)
+#  40. Intel-Native optimizations autodetected by GCC (MNATIVE_INTEL)
+#  41. AMD-Native optimizations autodetected by GCC (MNATIVE_AMD)
 
 # Try to set kernel directory to /usr/src/linux;
 # If it does not exist, try /usr/src/linux-$KERNVER
