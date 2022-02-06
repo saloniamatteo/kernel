@@ -34,7 +34,7 @@ automatically detected by GCC.
 | `-m`       | `--menuconfig` | Run `make menuconfig` in Kernel directory and exit       |
 | `-p`       | `--patches`    | Apply user patches (recommended)                         |
 
-Note: all options marked with `[\*]`, when enabled,
+Note: all options marked with `[*]`, when enabled,
 may or may not improve the performance of the Kernel at runtime,
 at the cost of slightly longer compilation time,
 and/or slightly higher Kernel size.
