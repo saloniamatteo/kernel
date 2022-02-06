@@ -42,7 +42,7 @@ and/or slightly higher Kernel size.
 Note 2: Clear Linux patches are HIGHLY recommended for Intel CPUs.
 Results may vary.
 
-Note 3: To use `-c`/`--ccache`, you first need to install `ccache`.
+Note 3: To use `-e`/`--ccache`, you first need to install `ccache`.
 On Gentoo, the package is `dev-util/ccache`.
 
 ## Configuration
