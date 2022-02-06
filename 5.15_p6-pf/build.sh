@@ -1,11 +1,13 @@
 #!/bin/sh
-CONFIGFILE="config"
-KVER="5.15"
-PVER="_p4-pf"
-KERNVER="${KVER}${PVER}"
-USRDIR="/usr/src/usr-kernel/$KERNVER"
 ARCHVER=24
+CONFIGFILE="config"
 JOBS="-j4"
+KVER="5.15"
+PVER="_p6-pf"
+KERNVER="${KVER}${PVER}"
+CUSTDIR="/usr/src/usr-kernel"
+CLEARDIR="$CUSTDIR/clear-patches"
+USRDIR="$CUSTDIR/$KERNVER"
 
 # Note: ARCHVER is the sub-architecture number,
 # which will be used to apply optimizations for your specific CPU.
@@ -96,7 +98,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 00		Successfully built Kernel
 01		Failed to copy config
 03		Failed to copy modprobed.db
-07		Failed to copy user patches
+07		Failed to copy Clear Linux/user patches
 08		Failed to set config values
 09		Failed to run make olddefconfig
 10		Failed to run make oldconfig
@@ -118,27 +120,36 @@ Flags:
 -F,--fastmath-s	Build Kernel with Fast Math (safe)	[*]
 -g,--graphite	Build Kernel with Graphite		[*]
 -h,--help	Print this help and exit
+-l,--clearl-ps	Enable Clear Linux patches		[*]
 -m,--menuconfig	Run 'make menuconfig' in Kernel directory and exit
+-p,--patches	Apply user patches (recommended)
 
 Note: all options marked with '[*]', when enabled,
 may or may not improve the performance of the Kernel at runtime,
 at the cost of slightly longer compilation time,
 and/or slightly higher Kernel size.
 
+Note 2: Clear Linux patches are HIGHLY recommended for Intel CPUs.
+Results may vary.
+
 Variables:
-CONFIGFILE=$CONFIGFILE
-KERNELDIR=$KERNELDIR
+ARCHVER=$ARCHVER
+CONFIGFILE=$CONFIGFILE 
+JOBS=$JOBS
 KVER=$KVER
 PVER=$PVER
 KERNVER=$KERNVER
+CUSTDIR=$CUSTDIR
+CLEARDIR=$CLEARDIR
 USRDIR=$USRDIR
-ARCHVER=$ARCHVER
-JOBS=$JOBS
 "
 	exit -10
 fi
 
 cd $KERNELDIR
+
+# Revert and remove any patches first
+echo "Removing pre-existing patches (if any)" && for p in *.patch; do patch -Rsp1 -i $p; rm $p; done
 
 if ! [[ $@ =~ "-c" || $@ =~ "--skip-cfg" ]]; then
 	echo "Copying config" &&
@@ -162,14 +173,21 @@ else
 	echo "Skipping copying modprobed.db.."
 fi
 
-# Optionally apply patches
-echo "Copying patches" &&
-if [ ! -n "$(echo *.patch)" ]; then
-	cp $USRDIR/*.patch $KERNELDIR || exit 7
-	for p in "*.patch"; do
-		echo "Applying patch $p..." && patch -Np1 -i $p
-	done
+if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
+	echo "Copying user patches"
+	cp $USRDIR/0*.patch $KERNELDIR || exit 7
 fi
+
+if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
+	echo "Copying Clear Linux patches"
+	cp $CLEARDIR/0{001,002,003,004,006,104,105,108,109,118,119,120,121,123,126,128}*.patch $KERNELDIR || exit 7
+	cp $CLEARDIR/{itmt2,percpu-minsize}.patch $KERNELDIR || exit 7
+fi
+
+echo "Applying Clear Linux and/or user patches (if any)"
+for p in *.patch; do
+	echo "Applying patch '$p'..." && patch -Np1 -i $p
+done
 
 echo "Setting config values" &&
 scripts/config --disable CONFIG_DEBUG_INFO &&

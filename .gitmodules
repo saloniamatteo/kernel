@@ -1,0 +1,3 @@
+[submodule "clear-patches"]
+	path = clear-patches
+	url = https://github.com/clearlinux-pkgs/linux
