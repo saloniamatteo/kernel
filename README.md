@@ -30,17 +30,20 @@ automatically detected by GCC.
 | `-F`       | `--fastmath`   | Build Kernel with safe Fast Math [\*]                    |
 | `-g`       | `--graphite`   | Build Kernel with Graphite [\*]                          |
 | `-h`       | `--help`       | Print help dialog and exit                               |
-| `-l`       | `--clearl-ps`  | Enabled and apply Clear Linux patches [\*]               |
+| `-l`       | `--clearl-ps`  | Enable and apply Clear Linux patches [\*]               |
 | `-m`       | `--menuconfig` | Run `make menuconfig` in Kernel directory and exit       |
 | `-p`       | `--patches`    | Apply user patches (recommended)                         |
 
-Note: all options marked with '[*]', when enabled,
+Note: all options marked with `[\*]`, when enabled,
 may or may not improve the performance of the Kernel at runtime,
 at the cost of slightly longer compilation time,
 and/or slightly higher Kernel size.
 
 Note 2: Clear Linux patches are HIGHLY recommended for Intel CPUs.
 Results may vary.
+
+Note 3: To use `-c`/`--ccache`, you first need to install `ccache`.
+On Gentoo, the package is `dev-util/ccache`.
 
 ## Configuration
 To configure your Kernel, run the following commands
