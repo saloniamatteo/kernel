@@ -21,6 +21,7 @@ automatically detected by GCC.
 ## Build.sh command-line flags
 
 | Short flag | Long flag      | Explaination                                             |
+|------------|----------------|----------------------------------------------------------|
 | `-b`       | `--skip-build` | Skip building the Kernel                                 |
 | `-c`       | `--skip-cfg`   | Skip copying Kernel configuration                        |
 | `-d`       | `--modprobed`  | Skip copying modprobed.db to Kernel directory            |
