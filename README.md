@@ -54,12 +54,13 @@ as root:
 cd /usr/src/
 
 # Clone the repository to usr-kernel, if you don't have it already
-git clone https://github.com/saloniamatteo/kernel 
+# Make sure you have enough permissions.
+git clone https://github.com/saloniamatteo/kernel usr-kernel
 cd usr-kernel
 
 # Select the latest version
-# (example: 5.14_p1-pf for Kernel version 5.14 patch 1)
-cd 5.14_p1-pf
+# (example: 5.16_p2-pf for Kernel version 5.16 patch 2)
+cd 5.16_p2-pf
  
 # Make sure we can execute the script
 chmod +x build.sh
@@ -68,29 +69,21 @@ chmod +x build.sh
 # match your configuration.
 # vim build.sh
 
-# Run the script, without building the Kernel
-# This will copy a few files we need (like patches)
-# and will apply them; it will also copy modprobed.db.
-# If you want to copy the included config, # remove the "-c" option
-./build.sh -b -c
+# Normally, you would run the following to configure
+# the kernel, before building it.
+# If you want to use any patches, make sure you add
+# the relative command-line options to this command
+# Example: add "-p" to apply the included patches;
+# add "-l" to apply Clear Linux's patches;
+# add "-p -l" to apply both included patches and
+# Clear Linux patches (flag order does not matter)
+./build.sh -b -m
 
-# Now, go to the Kernel directory
-cd /usr/src/linux
-
-# Run tool to modify config
-# this is usually one of menuconfig, xfconfig, qtconfig
-# menuconfig will run in your terminal with colors
-# Remember to save the configuration!
-make menuconfig
-
-# Once you're done, to build the Kernel, run the
-# following commands as root:
-
-# Go where your custom directory is
-cd /usr/src/usr-kernel/5.14_p1-pf
-
-# Run the script to build the Kernel
-# Add the -e option if you want to use ccache
-# (-c option means skip copying config)
-./build.sh -c
+# Once you're done configuring the Kernel, you're
+# ready to build it. Remember to add any patches and/or
+# optimizations you might want to the command.
+# Make sure you have enough permissions.
+# Example: build Kernel without copying default
+# configuration, using ccache, applying included patches.
+./build.sh -c -e -p
 ```
