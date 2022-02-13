@@ -142,6 +142,7 @@ PVER=$PVER
 KERNVER=$KERNVER
 CUSTDIR=$CUSTDIR
 CLEARDIR=$CLEARDIR
+PATCHDIR=$PATCHDIR
 USRDIR=$USRDIR
 "
 	exit -10
@@ -150,7 +151,7 @@ fi
 cd $KERNELDIR
 
 # Revert and remove any patches first
-echo "Removing pre-existing patches (if any)" && for p in *.patch; do patch -Rsp1 -i $p; rm $p; done
+echo "Removing pre-existing patches (if any)" && for p in *.patch; do patch -Rfsp1 -i $p; rm $p; done
 
 if ! [[ $@ =~ "-c" || $@ =~ "--skip-cfg" ]]; then
 	echo "Copying config" &&
