@@ -1,12 +1,13 @@
 #!/bin/sh
 ARCHVER=24
 CONFIGFILE="config"
-JOBS="-j4"
+JOBS="-j$(nproc)"
 KVER="5.16"
 PVER="_p2-pf"
 KERNVER="${KVER}${PVER}"
 CUSTDIR="/usr/src/usr-kernel"
 CLEARDIR="$CUSTDIR/clear-patches"
+PATCHDIR="$CUSTDIR/patches"
 USRDIR="$CUSTDIR/$KERNVER"
 
 # Note: ARCHVER is the sub-architecture number,
@@ -160,11 +161,6 @@ else
 	echo "Skipping copying config.."
 fi
 
-if [[ $@ =~ "-m" || $@ =~ "--menuconfig" ]]; then
-	make menuconfig
-	exit 99
-fi
-
 if ! [[ $@ =~ "-d" || $@ =~ "--modprobed" ]]; then
 	echo "Copying modprobed.db" &&
 	cp $USRDIR/modprobed.db $KERNELDIR ||
@@ -173,15 +169,15 @@ else
 	echo "Skipping copying modprobed.db.."
 fi
 
-if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
-	echo "Copying user patches"
-	cp $USRDIR/0*.patch $KERNELDIR || exit 7
-fi
-
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	echo "Copying Clear Linux patches"
-	cp $CLEARDIR/0{001,002,003,004,006,104,105,108,109,118,119,120,121,123,128}*.patch $KERNELDIR || exit 7
+	cp $CLEARDIR/0{001,002,003,004,006,104,105,108,109,112,118,119,120,121,123,128}*.patch $KERNELDIR || exit 7
 	cp $CLEARDIR/{itmt2,percpu-minsize}.patch $KERNELDIR || exit 7
+fi
+
+if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
+	echo "Copying user patches"
+	cp $PATCHDIR/0*.patch $KERNELDIR || exit 7
 fi
 
 echo "Applying Clear Linux and/or user patches (if any)"
@@ -190,13 +186,13 @@ for p in *.patch; do
 done
 
 echo "Setting config values" &&
+scripts/config --enable  CONFIG_PSI_DEFAULT_DISABLED &&
 scripts/config --disable CONFIG_DEBUG_INFO &&
 scripts/config --disable CONFIG_CGROUP_BPF &&
 scripts/config --disable CONFIG_BPF_LSM &&
 scripts/config --disable CONFIG_BPF_PRELOAD &&
 scripts/config --disable CONFIG_BPF_LIRC_MODE2 &&
 scripts/config --disable CONFIG_BPF_KPROBE_OVERRIDE &&
-scripts/config --enable CONFIG_PSI_DEFAULT_DISABLED &&
 scripts/config --disable CONFIG_LATENCYTOP &&
 scripts/config --disable CONFIG_SCHED_DEBUG &&
 scripts/config --disable CONFIG_KVM_WERROR &&
@@ -224,6 +220,11 @@ echo "Running make clean" &&
 make clean ||
 exit 13
 
+if [[ $@ =~ "-m" || $@ =~ "--menuconfig" ]]; then
+	make menuconfig
+	exit 99
+fi
+
 if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	# Don't use build timestap (slows down cache)
 	export KBUILD_BUILD_TIMESTAMP=""
@@ -241,7 +242,8 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 
 	# Check if Graphite is enabled
 	if [[ $@ =~ "-g" || $@ =~ "--graphite" ]]; then
-		GRAPHITE="-fgraphite-identity -floop-nest-optimize -fipa-pta -fdevirtualize-at-ltrans -falign-functions=32"
+		# -falign-functions=32
+		GRAPHITE="-fgraphite-identity -floop-nest-optimize -fipa-pta -fdevirtualize-at-ltrans"
 	else
 		GRAPHITE=""
 	fi
