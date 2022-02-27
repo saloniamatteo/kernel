@@ -1,3 +1,6 @@
+# Modprobed.db
+# Not recommended to use unless you know
+# what you're doing and what it is used for.
 ac
 ac97_bus
 aesni_intel
@@ -13,9 +16,9 @@ cfg80211
 coretemp
 cpufreq_ondemand
 crc16
+crc32_pclmul
 crc32c_generic
 crc32c_intel
-crc32_pclmul
 crct10dif_pclmul
 cryptd
 crypto_simd
@@ -54,7 +57,6 @@ irqbypass
 isofs
 iwlmvm
 iwlwifi
-jbd2
 joydev
 kvm
 kvm_intel
@@ -70,8 +72,8 @@ mei
 mei_hdcp
 mei_me
 mei_wdt
-mmc_core
 mfd_core
+mmc_core
 mousedev
 msr
 nls_iso8859_1
@@ -116,11 +118,13 @@ syscopyarea
 sysfillrect
 sysimgblt
 thinkpad_acpi
-usb_storage
 ttm
+tun
+usb_storage
 usbhid
 uvcvideo
 vfat
+vhost_net
 video
 videobuf2_common
 videobuf2_memops
@@ -132,3 +136,4 @@ vmw_vsock_vmci_transport
 vsock
 wmi
 x86_pkg_temp_thermal
+zram

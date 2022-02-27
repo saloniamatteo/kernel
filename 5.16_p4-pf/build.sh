@@ -3,7 +3,7 @@ ARCHVER=24
 CONFIGFILE="config"
 JOBS="-j$(nproc)"
 KVER="5.16"
-PVER="_p3-pf"
+PVER="_p4-pf"
 KERNVER="${KVER}${PVER}"
 CUSTDIR="/usr/src/usr-kernel"
 CLEARDIR="$CUSTDIR/clear-patches"
@@ -82,7 +82,7 @@ fi
 if [ ! -f "$USRDIR/config" ]; then
 	echo "Config is missing from Custom Kernel directory! "
 	exit -3
-else if [ ! -f "$USRDIR/modprobed.db" ]; then
+else if [ ! -f "$CUSTDIR/modprobed.db" ]; then
 	echo "Modprobed.db is missing from Custom Kernel directory! "
 	exit -4
 fi
@@ -92,8 +92,8 @@ fi
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 	printf "Exit codes:
 -10		Successfully printed help
--4		Modprobed.db is missing from Custom Kernel directory
--3		Config is missing from Custom Kernel directory
+-4		Cannot find modprobed.db  in $CUSTDIR
+-3		Cannot find Kernel config in $USRDIR
 -2		Could not find Custom Kernel directory
 -1		Could not find Kernel directory
 00		Successfully built Kernel
@@ -115,7 +115,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 Flags:
 -b,--skip-build	Skip building the Kernel
 -c,--skip-cfg	Skip copying Kernel configuration
--d,--modprobed	Skip copying modprobed.db to Kernel directory
+-d,--modprobed	Build only Kernel modules defined in modprobed.db
 -e,--ccache	Use ccache to speed up compilation
 -f,--fastmath	Build Kernel with Fast Math (unsafe)	[*]
 -F,--fastmath-s	Build Kernel with Fast Math (safe)	[*]
@@ -163,12 +163,12 @@ else
 	echo "Skipping copying config.."
 fi
 
-if ! [[ $@ =~ "-d" || $@ =~ "--modprobed" ]]; then
+if [[ $@ =~ "-d" || $@ =~ "--modprobed" ]]; then
 	echo "Copying modprobed.db" &&
 	cp $USRDIR/modprobed.db $KERNELDIR ||
 	exit 3
 else
-	echo "Skipping copying modprobed.db.."
+	echo "Skipping building modules according to modprobed.db.."
 fi
 
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
@@ -210,9 +210,11 @@ echo "Running yes $ARCHVER | make oldconfig && make prepare" &&
 yes $ARCHVER | make oldconfig && make prepare ||
 exit 10
 
-echo "Running make localmodconfig" &&
-make LSMOD="$KERNELDIR/modprobed.db" localmodconfig ||
-exit 11
+if [[ $@ =~ "-d" || $@ =~ "--modprobed" ]]; then
+	echo "Running make localmodconfig" &&
+	make LSMOD="$KERNELDIR/modprobed.db" localmodconfig ||
+	exit 11
+fi
 
 echo "Copying config to config.last" &&
 cp .config config.last ||
@@ -244,8 +246,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 
 	# Check if Graphite is enabled
 	if [[ $@ =~ "-g" || $@ =~ "--graphite" ]]; then
-		# -falign-functions=32
-		GRAPHITE="-fgraphite-identity -floop-nest-optimize -fipa-pta -fdevirtualize-at-ltrans"
+		GRAPHITE="-falign-functions=32 -fgraphite-identity -floop-nest-optimize -fipa-pta -fdevirtualize-at-ltrans"
 	else
 		GRAPHITE=""
 	fi
