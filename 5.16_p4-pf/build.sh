@@ -203,16 +203,16 @@ scripts/setlocalversion --save-scmversion ||
 exit 8
 
 echo "Running make olddefconfig" &&
-make olddefconfig ||
+make $JOBS olddefconfig ||
 exit 9
 
 echo "Running yes $ARCHVER | make oldconfig && make prepare" &&
-yes $ARCHVER | make oldconfig && make prepare ||
+yes $ARCHVER | make $JOBS oldconfig && make $JOBS prepare ||
 exit 10
 
 if [[ $@ =~ "-d" || $@ =~ "--modprobed" ]]; then
 	echo "Running make localmodconfig" &&
-	make LSMOD="$KERNELDIR/modprobed.db" localmodconfig ||
+	make LSMOD="$KERNELDIR/modprobed.db" $JOBS localmodconfig ||
 	exit 11
 fi
 
@@ -221,11 +221,11 @@ cp .config config.last ||
 exit 12
 
 echo "Running make clean" &&
-make clean ||
+make $JOBS clean ||
 exit 13
 
 if [[ $@ =~ "-m" || $@ =~ "--menuconfig" ]]; then
-	make menuconfig
+	make $JOBS menuconfig
 	exit 99
 fi
 
