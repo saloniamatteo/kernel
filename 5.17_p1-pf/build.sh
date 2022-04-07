@@ -246,7 +246,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 
 	# Check if Graphite is enabled
 	if [[ $@ =~ "-g" || $@ =~ "--graphite" ]]; then
-		GRAPHITE="-falign-functions=32 -fgraphite-identity -floop-nest-optimize -fipa-pta -fdevirtualize-at-ltrans"
+		GRAPHITE="-falign-functions=32 -fgraphite-identity -floop-nest-optimize"
 	else
 		GRAPHITE=""
 	fi
@@ -266,18 +266,36 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	build_start=$(date "+%s")
 
 	echo "Started build at $(date --date=@$build_start)"
-	echo "Building Kernel Version $(make kernelrelease)" &&
-	make CC="$cc" KCFLAGS+="$GRAPHITE $MATH" $JOBS ||
-	exit 14
+	echo "Building Kernel Version $(make kernelrelease)"
 
-	make CC="$cc" $JOBS modules_prepare ||
-	exit 15
+	# Check if we have schedtool
+	# if it is available, use it, and warn the user
+	command schedtool >/dev/null 2>&1
+	ret=$?
 
-	make CC="$cc" $JOBS modules_install ||
-	exit 16
+	# Schedtool available
+	if [ $ret -eq 0 ]; then
+		echo "
+#
+#  Warning: prepending following lines to 'make' commands
+#  to speed-up compilation (change according to your config)
+#
+#  'schedtool -a 0x255 -n -20 -e'
+#
+		"
 
-	make CC="$cc" $JOBS install ||
-	exit 17
+		schedtool -a 0x255 -n -20 -e make CC="$cc" KCFLAGS+="$GRAPHITE $MATH" $JOBS || exit 14
+		schedtool -a 0x255 -n -20 -e make CC="$cc" $JOBS modules_prepare || exit 15
+		schedtool -a 0x255 -n -20 -e make CC="$cc" $JOBS modules_install || exit 16
+		schedtool -a 0x255 -n -20 -e make CC="$cc" $JOBS install || exit 17
+
+	# Schedtool not available
+	else
+		make CC="$cc" KCFLAGS+="$GRAPHITE $MATH" $JOBS || exit 14
+		make CC="$cc" $JOBS modules_prepare || exit 15
+		make CC="$cc" $JOBS modules_install || exit 16
+		make CC="$cc" $JOBS install || exit 17
+	fi
 
 	build_end=$(date "+%s")
 	build_diff=$(expr $build_end - $build_start)
