@@ -2,8 +2,8 @@
 ARCHVER=24
 CONFIGFILE="config"
 JOBS="-j$(nproc)"
-KVER="5.16"
-PVER="_p5-pf"
+KVER="5.17"
+PVER="_p2-pf"
 KERNVER="${KVER}${PVER}"
 CUSTDIR="/usr/src/usr-kernel"
 CLEARDIR="$CUSTDIR/clear-patches"
@@ -151,7 +151,7 @@ fi
 cd $KERNELDIR
 
 # Revert and remove any patches first
-echo "Reverting and removing pre-existing patches (if any)" && for p in *.patch; do patch -Rfsp1 -i $p; done
+echo "Reverting and removing pre-existing patches (if any)" && for p in *.patch; do echo "Reverting patch $p..."; patch -Rfsp1 -i $p; done
 rm *.patch
 
 if ! [[ $@ =~ "-c" || $@ =~ "--skip-cfg" ]]; then
@@ -173,8 +173,8 @@ fi
 
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	echo "Copying Clear Linux patches"
-	cp $CLEARDIR/0{001,002,003,004,006,104,105,108,109,112,118,119,120,121,123,128}*.patch $KERNELDIR || exit 7
-	cp $CLEARDIR/{itmt2,percpu-minsize}.patch $KERNELDIR || exit 7
+	cp $CLEARDIR/0{001,002,003,004,006,104,105,108,109,110,111,112,118,119,120,121,122,123,128}*.patch $KERNELDIR || exit 7
+	cp $CLEARDIR/{itmt2,percpu-minsize,prezero}.patch $KERNELDIR || exit 7
 fi
 
 if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
@@ -246,7 +246,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 
 	# Check if Graphite is enabled
 	if [[ $@ =~ "-g" || $@ =~ "--graphite" ]]; then
-		GRAPHITE="-falign-functions=32 -fgraphite-identity -floop-nest-optimize -fipa-pta -fdevirtualize-at-ltrans"
+		GRAPHITE="-falign-functions=32 -fgraphite-identity -floop-nest-optimize"
 	else
 		GRAPHITE=""
 	fi
@@ -266,18 +266,36 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	build_start=$(date "+%s")
 
 	echo "Started build at $(date --date=@$build_start)"
-	echo "Building Kernel Version $(make kernelrelease)" &&
-	make CC="$cc" KCFLAGS+="$GRAPHITE $MATH" $JOBS ||
-	exit 14
+	echo "Building Kernel Version $(make kernelrelease)"
 
-	make CC="$cc" $JOBS modules_prepare ||
-	exit 15
+	# Check if we have schedtool
+	# if it is available, use it, and warn the user
+	command schedtool >/dev/null 2>&1
+	ret=$?
 
-	make CC="$cc" $JOBS modules_install ||
-	exit 16
+	# Schedtool available
+	if [ $ret -eq 0 ]; then
+		echo "
+#
+#  Warning: prepending following lines to 'make' commands
+#  to speed-up compilation (change according to your config)
+#
+#  'schedtool -a 0x255 -n -20 -e'
+#
+		"
 
-	make CC="$cc" $JOBS install ||
-	exit 17
+		schedtool -a 0x255 -n -20 -e make CC="$cc" KCFLAGS+="$GRAPHITE $MATH" $JOBS || exit 14
+		schedtool -a 0x255 -n -20 -e make CC="$cc" $JOBS modules_prepare || exit 15
+		schedtool -a 0x255 -n -20 -e make CC="$cc" $JOBS modules_install || exit 16
+		schedtool -a 0x255 -n -20 -e make CC="$cc" $JOBS install || exit 17
+
+	# Schedtool not available
+	else
+		make CC="$cc" KCFLAGS+="$GRAPHITE $MATH" $JOBS || exit 14
+		make CC="$cc" $JOBS modules_prepare || exit 15
+		make CC="$cc" $JOBS modules_install || exit 16
+		make CC="$cc" $JOBS install || exit 17
+	fi
 
 	build_end=$(date "+%s")
 	build_diff=$(expr $build_end - $build_start)
