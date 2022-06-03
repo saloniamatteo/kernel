@@ -2,8 +2,8 @@
 ARCHVER=24
 CONFIGFILE="config"
 JOBS="-j$(nproc)"
-KVER="5.17"
-PVER="_p3-pf"
+KVER="5.18"
+PVER="_p1-pf"
 KERNVER="${KVER}${PVER}"
 CUSTDIR="/usr/src/usr-kernel"
 CLEARDIR="$CUSTDIR/clear-patches"
@@ -174,7 +174,7 @@ fi
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	echo "Copying Clear Linux patches"
 	cp $CLEARDIR/0{001,002,003,004,006,104,105,108,109,110,111,112,118,119,120,121,122,123,128}*.patch $KERNELDIR || exit 7
-	cp $CLEARDIR/{itmt2,percpu-minsize,prezero}.patch $KERNELDIR || exit 7
+	cp $CLEARDIR/{itmt2,percpu-minsize}.patch $KERNELDIR || exit 7
 fi
 
 if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
