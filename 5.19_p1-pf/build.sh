@@ -1,14 +1,29 @@
-#!/bin/sh
+#!/bin/bash
+# This script allows users to simplify the Kernel
+# configuration and building process.
+# https://github.com/saloniamatteo/kernel
+
+# Sub-architecture number (24 = Haswell)
 ARCHVER=24
+# Name of the Kernel .config file in local directory
 CONFIGFILE="config"
+# How many threads to use to build Kernel
 JOBS="-j$(nproc)"
-KVER="5.18"
-PVER="_p2-pf"
+# Kernel version
+KVER="5.19"
+# Kernel "patch" version
+PVER="_p1-pf"
+# Full Kernel version
 KERNVER="${KVER}${PVER}"
+# Location of this directory (custom directory)
 CUSTDIR="/usr/src/usr-kernel"
+# Location of Clear Linux patch directory
 CLEARDIR="$CUSTDIR/clear-patches"
+# Location of included patches
 PATCHDIR="$CUSTDIR/patches"
+# Location of Kernel-specific user directory
 USRDIR="$CUSTDIR/$KERNVER"
+# Set this variable if your Kernel is not located under /usr/src/
 #KERNELDIR=""
 
 # Note: ARCHVER is the sub-architecture number,
