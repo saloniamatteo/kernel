@@ -10,9 +10,9 @@ CONFIGFILE="config"
 # How many threads to use to build Kernel
 JOBS="-j$(nproc)"
 # Kernel version
-KVER="5.19"
+KVER="6.0"
 # Kernel "patch" version
-PVER="_p2-pf"
+PVER="_p1-pf"
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
 # Location of this directory (custom directory)
