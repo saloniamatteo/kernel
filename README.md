@@ -15,8 +15,9 @@ I recommend you change the processor used, the maximum
 GPUs (max. 2 set), the maximum CPU threads (max. 8 set),
 the target CPU architecture (Haswell set), and so on.
 
-**Note**: Kernel configuration is set to use Intel-native optimizations
-automatically detected by GCC.
+**Note**: There are two config files: the first one, `config`, contains the
+Kernel config for my T440p, while the other one, `config.pc`,
+contains the Kernel config for my PC, which has an i5-11400 (Rocket Lake).
 
 ## Build.sh command-line flags
 
