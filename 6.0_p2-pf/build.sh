@@ -12,7 +12,7 @@ JOBS="-j6"
 # Kernel version
 KVER="6.0"
 # Kernel "patch" version
-PVER="_p1-pf"
+PVER="_p2-pf"
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
 # Location of this directory (custom directory)
@@ -196,7 +196,7 @@ fi
 
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	echo "Copying Clear Linux patches"
-	cp $CLEARDIR/0{001,002,003,004,006,104,105,108,109,110,111,112,118,119,120,121,122,123,128}*.patch $KERNELDIR || exit 7
+	cp $CLEARDIR/0{104,105,108,109,111,112,118,119,120,121,122,123,128}*.patch $KERNELDIR || exit 7
 	cp $CLEARDIR/{itmt2,percpu-minsize}.patch $KERNELDIR || exit 7
 fi
 
