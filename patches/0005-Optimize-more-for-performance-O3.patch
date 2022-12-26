@@ -28,8 +28,8 @@
  else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
  KBUILD_CFLAGS += -Os
 
---- a/Kconfig
-+++ b/Kconfig
+--- a/init/Kconfig
++++ b/init/Kconfig
 @@ -1414,14 +1414,19 @@
  
  choice
