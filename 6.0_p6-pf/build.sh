@@ -73,7 +73,7 @@ USRDIR="$CUSTDIR/$KERNVER"
 #  41. AMD-Native optimizations autodetected by GCC (MNATIVE_AMD)
 
 # Check if KERNELDIR is set
-if [ -z ${KERNELDIR+x} ]; then
+if [ -z ${KERNELDIR} ]; then
 	# Try to set kernel directory to /usr/src/linux-$KERNVER;
 	# If it does not exist, try /usr/src/linux
 	if [ -d "/usr/src/linux-$KERNVER" ]; then
