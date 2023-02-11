@@ -4,11 +4,11 @@
 # https://github.com/saloniamatteo/kernel
 
 # Sub-architecture number (24= Haswell, 34 = Rocket Lake)
-ARCHVER=34
+ARCHVER=24
 # Name of the Kernel .config file in local directory
-CONFIGFILE="config.pc"
+CONFIGFILE="config"
 # How many threads to use to build Kernel
-JOBS="-j6"
+JOBS="-j4"
 # Kernel version
 KVER="6.1"
 # Kernel "patch" version
