@@ -4,15 +4,15 @@
 # https://github.com/saloniamatteo/kernel
 
 # Sub-architecture number (24= Haswell, 34 = Rocket Lake)
-ARCHVER=24
+ARCHVER=34
 # Name of the Kernel .config file in local directory
-CONFIGFILE="config"
+CONFIGFILE="config.pc"
 # How many threads to use to build Kernel
-JOBS="-j4"
+JOBS="-j6"
 # Kernel version
-KVER="6.0"
+KVER="6.1"
 # Kernel "patch" version
-PVER="_p6-pf"
+PVER="_p5-pf"
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
 # Location of this directory (custom directory)
@@ -196,7 +196,7 @@ fi
 
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	echo "Copying Clear Linux patches"
-	cp $CLEARDIR/0{104,105,108,109,111,112,119,120,122,123,128}*.patch $KERNELDIR || exit 7
+	cp $CLEARDIR/0{102,104,105,106,108,109,111,112,118,119,120,122,123,128}*.patch $KERNELDIR || exit 7
 	cp $CLEARDIR/itmt2.patch $KERNELDIR || exit 7
 fi
 
