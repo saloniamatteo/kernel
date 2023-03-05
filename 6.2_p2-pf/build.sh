@@ -8,11 +8,11 @@ ARCHVER=34
 # Name of the Kernel .config file in local directory
 CONFIGFILE="config.pc"
 # How many threads to use to build Kernel
-JOBS="-j6"
+JOBS="-j5"
 # Kernel version
-KVER="6.1"
+KVER="6.2"
 # Kernel "patch" version
-PVER="_p5-pf"
+PVER="_p2-pf"
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
 # Location of this directory (custom directory)
