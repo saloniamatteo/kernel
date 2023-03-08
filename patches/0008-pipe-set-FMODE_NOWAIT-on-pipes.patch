@@ -1,0 +1,26 @@
+From: Jens Axboe <axboe@kernel.dk>
+Subject: [PATCH 3/3] pipe: set FMODE_NOWAIT on pipes
+Date: Tue,  7 Mar 2023 20:10:33 -0700
+
+The read/write path is now prepared to deal with IOCB_NOWAIT, hence
+enable support for that via setting FMODE_NOWAIT on new pipes.
+
+Signed-off-by: Jens Axboe <axboe@kernel.dk>
+---
+ fs/pipe.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/fs/pipe.c
++++ b/fs/pipe.c
+@@ -994,6 +994,9 @@ static int __do_pipe_flags(int *fd, struct file **files, int flags)
+ 	audit_fd_pair(fdr, fdw);
+ 	fd[0] = fdr;
+ 	fd[1] = fdw;
++	/* pipe groks IOCB_NOWAIT */
++	files[0]->f_mode |= FMODE_NOWAIT;
++	files[1]->f_mode |= FMODE_NOWAIT;
+ 	return 0;
+ 
+  err_fdr:
+-- 
+2.39.2
