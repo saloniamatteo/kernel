@@ -3,16 +3,16 @@
 # configuration and building process.
 # https://github.com/saloniamatteo/kernel
 
-# Sub-architecture number (24= Haswell, 34 = Rocket Lake)
+# Sub-architecture number (24 = Haswell, 34 = Rocket Lake)
 ARCHVER=24
 # Name of the Kernel .config file in local directory
 CONFIGFILE="config"
 # How many threads to use to build Kernel
 JOBS="-j4"
 # Kernel version
-KVER="6.2"
+KVER="6.3.1"
 # Kernel "patch" version
-PVER="_p2-pf"
+PVER="-gentoo"
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
 # Location of this directory (custom directory)
@@ -21,6 +21,10 @@ CUSTDIR="/usr/src/usr-kernel"
 CLEARDIR="$CUSTDIR/clear-patches"
 # Location of included patches
 PATCHDIR="$CUSTDIR/patches"
+# Location of v4l2loopback directory
+V4L2DIR="$CUSTDIR/v4l2loopback"
+# Location of CPU family optimizations directory
+CFODIR="$CUSTDIR/kernel_compiler_patch"
 # Location of Kernel-specific user directory
 USRDIR="$CUSTDIR/$KERNVER"
 # Set this variable if your Kernel is not located under /usr/src/
@@ -81,79 +85,48 @@ if [ -z ${KERNELDIR} ]; then
 	else if [ -d "/usr/src/linux" ]; then
 		KERNELDIR="/usr/src/linux"
 	else
-		echo "Could not find Kernel directory! "
-		exit -1
+		echo "Could not find Kernel directory."
+		exit
 	fi
 	fi
 else if [ ! -d $KERNELDIR ]; then
-	echo "KERNELDIR $KERNELDIR is invalid!"
-	exit -1
+	echo "KERNELDIR $KERNELDIR is invalid."
+	exit
 fi
 fi
 
 # Check if user directory exists
 if [ ! -d "$USRDIR" ]; then
-	echo "Could not find Custom Kernel directory! "
-	exit -2
+	echo "Could not find Custom Kernel directory."
+	exit
 fi
 
 # Check that required files exist in user directory
 # Note: we don't check if patches exist because
-# we can apply them optionally;
-# we don't check for build.sh because
-# how are we running this script?
+# we can apply them optionally
 if [ ! -f "$USRDIR/config" ]; then
-	echo "Config is missing from Custom Kernel directory! "
-	exit -3
-else if [ ! -f "$CUSTDIR/modprobed.db" ]; then
-	echo "Modprobed.db is missing from Custom Kernel directory! "
-	exit -4
-fi
+	echo "Config is missing from Custom Kernel directory."
+	exit
 fi
 
 # If argument is "-h" or "--help", print exit codes
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
-	printf "Exit codes:
--10		Successfully printed help
--4		Cannot find modprobed.db  in $CUSTDIR
--3		Cannot find Kernel config in $USRDIR
--2		Could not find Custom Kernel directory
--1		Could not find Kernel directory
-00		Successfully built Kernel
-01		Failed to copy config
-03		Failed to copy modprobed.db
-07		Failed to copy Clear Linux/user patches
-08		Failed to set config values
-09		Failed to run make olddefconfig
-10		Failed to run make oldconfig
-11		Failed to run make localmodconfig
-12		Failed to copy config to config.last
-13		Failed to run make clean
-14		Failed to run make $JOBS
-15		Failed to run make $JOBS modules_prepare
-16		Failed to run make $JOBS modules_install
-17		Failed to run make $JOBS install
-99		Ran 'make menuconfig' with -m option
-
-Flags:
+	printf "Flags:
 -b,--skip-build	Skip building the Kernel
 -c,--skip-cfg	Skip copying Kernel configuration
--d,--modprobed	Build only Kernel modules defined in modprobed.db
 -e,--ccache	Use ccache to speed up compilation
--f,--fastmath	Build Kernel with Fast Math (unsafe)	[*]
--F,--fastmath-s	Build Kernel with Fast Math (safe)	[*]
--g,--graphite	Build Kernel with Graphite		[*]
+-f,--fastmath	Build Kernel with Unsafe Fast Math	[*]
 -h,--help	Print this help and exit
 -l,--clearl-ps	Enable Clear Linux patches		[*]
 -m,--menuconfig	Run 'make menuconfig' in Kernel directory and exit
+-o,--cpu-opts	Build Kernel with CPU family optimisations [*]
 -p,--patches	Apply user patches (recommended)
 
 Note: all options marked with '[*]', when enabled,
 may or may not improve the performance of the Kernel at runtime,
 at the cost of slightly longer compilation time,
 and/or slightly higher Kernel size.
-
-Note 2: Clear Linux patches are HIGHLY recommended for Intel CPUs.
+Clear Linux patches are HIGHLY recommended for Intel CPUs.
 Results may vary.
 
 Variables:
@@ -166,9 +139,12 @@ KERNVER=$KERNVER
 CUSTDIR=$CUSTDIR
 CLEARDIR=$CLEARDIR
 PATCHDIR=$PATCHDIR
+V4L2DIR=$V4L2DIR
+BBR2DIR=$BBR2DIR
+ZSTDDIR=$ZSTDDIR
 USRDIR=$USRDIR
 "
-	exit -10
+	exit
 fi
 
 cd $KERNELDIR
@@ -181,28 +157,31 @@ if ! [[ $@ =~ "-c" || $@ =~ "--skip-cfg" ]]; then
 	echo "Copying config" &&
 	cp $USRDIR/$CONFIGFILE $KERNELDIR/config &&
 	cp config .config ||
-	exit 1
+	exit
 else
 	echo "Skipping copying config.."
 fi
 
-if [[ $@ =~ "-d" || $@ =~ "--modprobed" ]]; then
-	echo "Copying modprobed.db" &&
-	cp $USRDIR/modprobed.db $KERNELDIR ||
-	exit 3
-else
-	echo "Skipping building modules according to modprobed.db.."
-fi
-
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	echo "Copying Clear Linux patches"
-	cp $CLEARDIR/0{102,104,105,106,108,109,111,112,118,119,120,122,123,128}*.patch $KERNELDIR || exit 7
-	cp $CLEARDIR/itmt2.patch $KERNELDIR || exit 7
+	cp $CLEARDIR/0{102,104,105,106,108,109,111,112,118,119,120,122,123,128}*.patch $KERNELDIR || exit
+	cp $CLEARDIR/itmt2.patch $KERNELDIR || exit
+fi
+
+if [[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]]; then
+	# Check if CPU family optimizations directory exists
+	if [ ! -d "$CFODIR" ]; then
+		echo "Could not find CPU family optimisations directory."
+		exit
+	fi
+
+	echo "Copying CPU family optimisation patches"
+	cp $CFODIR/more-uarches-for-kernel-5.17+.patch $KERNELDIR || exit
 fi
 
 if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
 	echo "Copying user patches"
-	cp $PATCHDIR/0*.patch $KERNELDIR || exit 7
+	cp $PATCHDIR/0*.patch $KERNELDIR || exit
 fi
 
 echo "Applying Clear Linux and/or user patches (if any)"
@@ -220,36 +199,31 @@ scripts/config --disable CONFIG_BPF_LIRC_MODE2 &&
 scripts/config --disable CONFIG_BPF_KPROBE_OVERRIDE &&
 scripts/config --disable CONFIG_LATENCYTOP &&
 scripts/config --disable CONFIG_SCHED_DEBUG &&
-scripts/config --disable CONFIG_KVM_WERROR &&
-echo "Setting version..." &&
-scripts/setlocalversion --save-scmversion ||
-exit 8
+scripts/config --disable CONFIG_KVM_WERROR ||
+exit
+
+#echo "Setting version..." &&
+#scripts/setlocalversion --save-scmversion ||
 
 echo "Running make olddefconfig" &&
 make $JOBS olddefconfig ||
-exit 9
+exit
 
 echo "Running yes $ARCHVER | make oldconfig && make prepare" &&
 yes $ARCHVER | make $JOBS oldconfig && make $JOBS prepare ||
-exit 10
-
-if [[ $@ =~ "-d" || $@ =~ "--modprobed" ]]; then
-	echo "Running make localmodconfig" &&
-	make LSMOD="$KERNELDIR/modprobed.db" $JOBS localmodconfig ||
-	exit 11
-fi
+exit
 
 echo "Copying config to config.last" &&
 cp .config config.last ||
-exit 12
+exit
 
 echo "Running make clean" &&
 make $JOBS clean ||
-exit 13
+exit
 
 if [[ $@ =~ "-m" || $@ =~ "--menuconfig" ]]; then
 	make $JOBS menuconfig
-	exit 99
+	exit
 fi
 
 if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
@@ -257,7 +231,6 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	export KBUILD_BUILD_TIMESTAMP=""
 
 	# Math optimizations
-	SAFE_FAST_MATH="-fno-math-errno -fno-trapping-math"
 	FAST_MATH="-fno-signed-zeros -fno-trapping-math -fassociative-math -freciprocal-math -fno-math-errno -ffinite-math-only -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fexcess-precision=fast"
 
 	# Check if we can use ccache
@@ -267,23 +240,11 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 		cc="gcc"
 	fi
 
-	# Check if Graphite is enabled
-	if [[ $@ =~ "-g" || $@ =~ "--graphite" ]]; then
-		GRAPHITE="-falign-functions=32 -fgraphite-identity -floop-nest-optimize"
-	else
-		GRAPHITE=""
-	fi
-
 	# Check if unsafe Fast Math is enabled
 	if [[ $@ =~ "-f" || $@ =~ "--fastmath" ]]; then
 		MATH="$FAST_MATH"
 	else
-		# Check if safe Fast Math is enabled
-		if [[ $@ =~ "-F" || $@ =~ "--fastmath-s" ]]; then
-			MATH="$SAFE_FAST_MATH"
-		else
-			MATH=""
-		fi
+		MATH=""
 	fi
 
 	build_start=$(date "+%s")
@@ -291,10 +252,10 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	echo "Started build at $(date --date=@$build_start)"
 	echo "Building Kernel Version $(make kernelrelease)"
 
-	make CC="$cc" KCFLAGS+="$GRAPHITE $MATH" $JOBS || exit 14
-	make CC="$cc" $JOBS modules_prepare || exit 15
-	make CC="$cc" $JOBS modules_install || exit 16
-	make CC="$cc" $JOBS install || exit 17
+	make CC="$cc" KCFLAGS+="$GRAPHITE $MATH" $JOBS || exit
+	make CC="$cc" $JOBS modules_prepare || exit
+	make CC="$cc" $JOBS modules_install || exit
+	make CC="$cc" $JOBS install || exit
 
 	build_end=$(date "+%s")
 	build_diff=$(expr $build_end - $build_start)

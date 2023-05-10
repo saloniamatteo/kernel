@@ -1,3 +1,9 @@
 [submodule "clear-patches"]
 	path = clear-patches
 	url = https://github.com/clearlinux-pkgs/linux
+[submodule "v4l2loopback"]
+	path = v4l2loopback
+	url = https://github.com/umlaeute/v4l2loopback
+[submodule "kernel_compiler_patch"]
+	path = kernel_compiler_patch
+	url = https://github.com/graysky2/kernel_compiler_patch
