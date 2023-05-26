@@ -1,0 +1,40 @@
+Subject: [PATCH 03/13] ext4: Remove unused extern variables declaration
+Date: Thu, 25 May 2023 17:02:57 +0530
+From: "Ritesh Harjani (IBM)" <ritesh.list@gmail.com>
+
+ext4_mb_stats & ext4_mb_max_to_scan are never used. We use
+sbi->s_mb_stats and sbi->s_mb_max_to_scan instead.
+Hence kill these extern declarations.
+
+Signed-off-by: Ritesh Harjani (IBM) <ritesh.list@gmail.com>
+Signed-off-by: Ojaswin Mujoo <ojaswin@linux.ibm.com>
+Reviewed-by: Jan Kara <jack@suse.cz>
+---
+ fs/ext4/ext4.h    | 2 --
+ fs/ext4/mballoc.h | 2 +-
+ 2 files changed, 1 insertion(+), 3 deletions(-)
+
+--- a/fs/ext4/ext4.h
++++ b/fs/ext4/ext4.h
+@@ -2815,8 +2815,6 @@ int ext4_fc_record_regions(struct super_block *sb, int ino,
+ /* mballoc.c */
+ extern const struct seq_operations ext4_mb_seq_groups_ops;
+ extern const struct seq_operations ext4_mb_seq_structs_summary_ops;
+-extern long ext4_mb_stats;
+-extern long ext4_mb_max_to_scan;
+ extern int ext4_seq_mb_stats_show(struct seq_file *seq, void *offset);
+ extern int ext4_mb_init(struct super_block *);
+ extern int ext4_mb_release(struct super_block *);
+--- a/fs/ext4/mballoc.h
++++ b/fs/ext4/mballoc.h
+@@ -49,7 +49,7 @@
+ #define MB_DEFAULT_MIN_TO_SCAN		10
+ 
+ /*
+- * with 'ext4_mb_stats' allocator will collect stats that will be
++ * with 's_mb_stats' allocator will collect stats that will be
+  * shown at umount. The collecting costs though!
+  */
+ #define MB_DEFAULT_STATS		0
+-- 
+2.31.1

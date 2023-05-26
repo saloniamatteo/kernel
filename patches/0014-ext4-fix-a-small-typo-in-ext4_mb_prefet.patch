@@ -1,0 +1,25 @@
+Subject: [PATCH 04/13] ext4: Fix a small typo in ext4_mb_prefetch_fini()
+Date: Thu, 25 May 2023 17:02:58 +0530
+From: "Ojaswin Mujoo" <ojaswin@linux.ibm.com>
+
+Fix a small typo in the if condition introduced in the
+commit b6bef1b5.
+
+Signed-off-by: Ojaswin Mujoo <ojaswin@linux.ibm.com>
+---
+ fs/ext4/mballoc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/fs/ext4/mballoc.c
++++ b/fs/ext4/mballoc.c
+@@ -2609,7 +2609,7 @@ void ext4_mb_prefetch_fini(struct super_block *sb, ext4_group_t group,
+ 		gdp = ext4_get_group_desc(sb, group, NULL);
+ 		grp = ext4_get_group_info(sb, group);
+ 
+-		if (grp && grp && EXT4_MB_GRP_NEED_INIT(grp) &&
++		if (gdp && grp && EXT4_MB_GRP_NEED_INIT(grp) &&
+ 		    ext4_free_group_clusters(sb, gdp) > 0 &&
+ 		    !(ext4_has_group_desc_csum(sb) &&
+ 		      (gdp->bg_flags & cpu_to_le16(EXT4_BG_BLOCK_UNINIT)))) {
+-- 
+2.31.1

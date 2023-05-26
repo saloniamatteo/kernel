@@ -1,0 +1,110 @@
+Subject: [PATCH 06/13] ext4: Add per CR extent scanned counter
+Date: Thu, 25 May 2023 17:03:00 +0530
+From: "Ojaswin Mujoo" <ojaswin@linux.ibm.com>
+
+This gives better visibility into the number of extents scanned in each
+particular CR. For example, this information can be used to see how out
+block group scanning logic is performing when the BG is fragmented.
+
+Signed-off-by: Ojaswin Mujoo <ojaswin@linux.ibm.com>
+Reviewed-by: Ritesh Harjani (IBM) <ritesh.list@gmail.com>
+Reviewed-by: Jan Kara <jack@suse.cz>
+---
+ fs/ext4/ext4.h    |  1 +
+ fs/ext4/mballoc.c | 12 ++++++++++++
+ fs/ext4/mballoc.h |  1 +
+ 3 files changed, 14 insertions(+)
+
+--- a/fs/ext4/ext4.h
++++ b/fs/ext4/ext4.h
+@@ -1553,6 +1553,7 @@ struct ext4_sb_info {
+ 	atomic_t s_bal_success;	/* we found long enough chunks */
+ 	atomic_t s_bal_allocated;	/* in blocks */
+ 	atomic_t s_bal_ex_scanned;	/* total extents scanned */
++	atomic_t s_bal_cX_ex_scanned[EXT4_MB_NUM_CRS];	/* total extents scanned */
+ 	atomic_t s_bal_groups_scanned;	/* number of groups scanned */
+ 	atomic_t s_bal_goals;	/* goal hits */
+ 	atomic_t s_bal_breaks;	/* too long searches */
+--- a/fs/ext4/mballoc.c
++++ b/fs/ext4/mballoc.c
+@@ -2103,6 +2103,7 @@ static void ext4_mb_measure_extent(struct ext4_allocation_context *ac,
+ 	BUG_ON(ac->ac_status != AC_STATUS_CONTINUE);
+ 
+ 	ac->ac_found++;
++	ac->ac_cX_found[ac->ac_criteria]++;
+ 
+ 	/*
+ 	 * The special case - take what you catch first
+@@ -2277,6 +2278,7 @@ void ext4_mb_simple_scan_group(struct ext4_allocation_context *ac,
+ 			break;
+ 		}
+ 		ac->ac_found++;
++		ac->ac_cX_found[ac->ac_criteria]++;
+ 
+ 		ac->ac_b_ex.fe_len = 1 << i;
+ 		ac->ac_b_ex.fe_start = k << i;
+@@ -2390,6 +2392,7 @@ void ext4_mb_scan_aligned(struct ext4_allocation_context *ac,
+ 			max = mb_find_extent(e4b, i, sbi->s_stripe, &ex);
+ 			if (max >= sbi->s_stripe) {
+ 				ac->ac_found++;
++				ac->ac_cX_found[ac->ac_criteria]++;
+ 				ex.fe_logical = 0xDEADF00D; /* debug value */
+ 				ac->ac_b_ex = ex;
+ 				ext4_mb_use_best_found(ac, e4b);
+@@ -2926,6 +2929,7 @@ int ext4_seq_mb_stats_show(struct seq_file *seq, void *offset)
+ 	seq_printf(seq, "\t\thits: %llu\n", atomic64_read(&sbi->s_bal_cX_hits[CR0]));
+ 	seq_printf(seq, "\t\tgroups_considered: %llu\n",
+ 		   atomic64_read(&sbi->s_bal_cX_groups_considered[CR0]));
++	seq_printf(seq, "\t\textents_scanned: %u\n", atomic_read(&sbi->s_bal_cX_ex_scanned[CR0]));
+ 	seq_printf(seq, "\t\tuseless_loops: %llu\n",
+ 		   atomic64_read(&sbi->s_bal_cX_failed[CR0]));
+ 	seq_printf(seq, "\t\tbad_suggestions: %u\n",
+@@ -2935,6 +2939,7 @@ int ext4_seq_mb_stats_show(struct seq_file *seq, void *offset)
+ 	seq_printf(seq, "\t\thits: %llu\n", atomic64_read(&sbi->s_bal_cX_hits[CR1]));
+ 	seq_printf(seq, "\t\tgroups_considered: %llu\n",
+ 		   atomic64_read(&sbi->s_bal_cX_groups_considered[CR1]));
++	seq_printf(seq, "\t\textents_scanned: %u\n", atomic_read(&sbi->s_bal_cX_ex_scanned[CR1]));
+ 	seq_printf(seq, "\t\tuseless_loops: %llu\n",
+ 		   atomic64_read(&sbi->s_bal_cX_failed[CR1]));
+ 	seq_printf(seq, "\t\tbad_suggestions: %u\n",
+@@ -2944,6 +2949,7 @@ int ext4_seq_mb_stats_show(struct seq_file *seq, void *offset)
+ 	seq_printf(seq, "\t\thits: %llu\n", atomic64_read(&sbi->s_bal_cX_hits[CR2]));
+ 	seq_printf(seq, "\t\tgroups_considered: %llu\n",
+ 		   atomic64_read(&sbi->s_bal_cX_groups_considered[CR2]));
++	seq_printf(seq, "\t\textents_scanned: %u\n", atomic_read(&sbi->s_bal_cX_ex_scanned[CR2]));
+ 	seq_printf(seq, "\t\tuseless_loops: %llu\n",
+ 		   atomic64_read(&sbi->s_bal_cX_failed[CR2]));
+ 
+@@ -2951,6 +2957,7 @@ int ext4_seq_mb_stats_show(struct seq_file *seq, void *offset)
+ 	seq_printf(seq, "\t\thits: %llu\n", atomic64_read(&sbi->s_bal_cX_hits[CR3]));
+ 	seq_printf(seq, "\t\tgroups_considered: %llu\n",
+ 		   atomic64_read(&sbi->s_bal_cX_groups_considered[CR3]));
++	seq_printf(seq, "\t\textents_scanned: %u\n", atomic_read(&sbi->s_bal_cX_ex_scanned[CR3]));
+ 	seq_printf(seq, "\t\tuseless_loops: %llu\n",
+ 		   atomic64_read(&sbi->s_bal_cX_failed[CR3]));
+ 	seq_printf(seq, "\textents_scanned: %u\n", atomic_read(&sbi->s_bal_ex_scanned));
+@@ -4390,7 +4397,12 @@ static void ext4_mb_collect_stats(struct ext4_allocation_context *ac)
+ 		atomic_add(ac->ac_b_ex.fe_len, &sbi->s_bal_allocated);
+ 		if (ac->ac_b_ex.fe_len >= ac->ac_o_ex.fe_len)
+ 			atomic_inc(&sbi->s_bal_success);
++
+ 		atomic_add(ac->ac_found, &sbi->s_bal_ex_scanned);
++		for (int i=0; i<EXT4_MB_NUM_CRS; i++) {
++			atomic_add(ac->ac_cX_found[i], &sbi->s_bal_cX_ex_scanned[i]);
++		}
++
+ 		atomic_add(ac->ac_groups_scanned, &sbi->s_bal_groups_scanned);
+ 		if (ac->ac_g_ex.fe_start == ac->ac_b_ex.fe_start &&
+ 				ac->ac_g_ex.fe_group == ac->ac_b_ex.fe_group)
+--- a/fs/ext4/mballoc.h
++++ b/fs/ext4/mballoc.h
+@@ -184,6 +184,7 @@ struct ext4_allocation_context {
+ 	__u16 ac_groups_scanned;
+ 	__u16 ac_groups_linear_remaining;
+ 	__u16 ac_found;
++	__u16 ac_cX_found[EXT4_MB_NUM_CRS];
+ 	__u16 ac_tail;
+ 	__u16 ac_buddy;
+ 	__u8 ac_status;
+-- 
+2.31.1
