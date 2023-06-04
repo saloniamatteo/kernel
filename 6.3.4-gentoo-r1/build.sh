@@ -10,9 +10,9 @@ CONFIGFILE="config"
 # How many threads to use to build Kernel
 JOBS="-j4"
 # Kernel version
-KVER="6.3.3"
+KVER="6.3.4"
 # Kernel "patch" version
-PVER="-gentoo"
+PVER="-gentoo-r1"
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
 # Location of this directory (custom directory)
