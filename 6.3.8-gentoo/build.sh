@@ -8,8 +8,7 @@ ARCHVER=24
 # Name of the Kernel .config file in local directory
 CONFIGFILE="config"
 # How many threads to use to build Kernel
-#JOBS="-j4"
-JOBS="-j8"
+JOBS="-j4"
 # Kernel version
 KVER="6.3.8"
 # Kernel "patch" version
