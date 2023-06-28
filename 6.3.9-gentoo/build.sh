@@ -263,7 +263,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	fi
 
 	# Other optimization flags
-	OPTS="-fno-tree-vectorize -mpopcnt -mno-avx2"
+	OPTS="-fno-tree-vectorize -mpopcnt"
 
 	build_start=$(date "+%s")
 
