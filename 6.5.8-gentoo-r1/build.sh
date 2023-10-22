@@ -7,12 +7,12 @@
 ARCHVER=24
 # Name of the Kernel .config file in local directory
 CONFIGFILE="config"
-# How many threads to use to build Kernel
+# How many threads to use to build Kernel (t440p = -j4, PC = -j9)
 JOBS="-j4"
 # Kernel version
-KVER="6.4.0"
+KVER="6.5.8"
 # Kernel "patch" version
-PVER="-gentoo"
+PVER="-gentoo-r1"
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
 # Location of this directory (custom directory)
