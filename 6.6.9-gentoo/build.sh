@@ -167,10 +167,8 @@ fi
 
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	echo "Copying Clear Linux patches"
-	cp $CLEARDIR/0001-sched-cpuset-Fix-dl_cpu_busy-panic-due-to-empty-cs-c.patch $KERNELDIR || exit
-	cp $CLEARDIR/0001-sched-migrate.patch                                        $KERNELDIR || exit
 	cp $CLEARDIR/0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch $KERNELDIR || exit
-	cp $CLEARDIR/0{006,007,008,051,102,104,105,106,108,109,111,112,118}*.patch   $KERNELDIR || exit
+	cp $CLEARDIR/0{007,008,051,102,104,106,108,109,111}*.patch   $KERNELDIR || exit
 	cp $CLEARDIR/0{120,122,123,130,131,135,158}*.patch                           $KERNELDIR || exit
 fi
 
