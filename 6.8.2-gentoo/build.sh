@@ -3,8 +3,8 @@
 # configuration and building process.
 # https://github.com/saloniamatteo/kernel
 
-# Sub-architecture number (24 = Haswell, 34 = Rocket Lake)
-ARCHVER=24
+# Sub-architecture number (25 = Haswell, 35 = Rocket Lake)
+ARCHVER=25
 # Name of the Kernel .config file in local directory
 CONFIGFILE="config"
 # How many threads to use to build Kernel (t440p = -j4, PC = -j9)
@@ -47,34 +47,38 @@ USRDIR="$CUSTDIR/$KERNVER"
 #  11. AMD Zen (MZEN)
 #  12. AMD Zen 2 (MZEN2)
 #  13. AMD Zen 3 (MZEN3)
-#  14. Intel P4 / older Netburst based Xeon (MPSC)
-#  15. Intel Core 2 (MCORE2)
-#  16. Intel Atom (MATOM)
-#  17. Intel Nehalem (MNEHALEM)
-#  18. Intel Westmere (MWESTMERE)
-#  19. Intel Silvermont (MSILVERMONT)
-#  20. Intel Goldmont (MGOLDMONT)
-#  21. Intel Goldmont Plus (MGOLDMONTPLUS)
-#  22. Intel Sandy Bridge (MSANDYBRIDGE)
-#  23. Intel Ivy Bridge (MIVYBRIDGE)
-#  24. Intel Haswell (MHASWELL)
-#  25. Intel Broadwell (MBROADWELL)
-#  26. Intel Skylake (MSKYLAKE)
-#  27. Intel Skylake X (MSKYLAKEX)
-#  28. Intel Cannon Lake (MCANNONLAKE)
-#  29. Intel Ice Lake (MICELAKE)
-#  30. Intel Cascade Lake (MCASCADELAKE)
-#  31. Intel Cooper Lake (MCOOPERLAKE)
-#  32. Intel Tiger Lake (MTIGERLAKE)
-#  33. Intel Sapphire Rapids (MSAPPHIRERAPIDS)
-#  34. Intel Rocket Lake (MROCKETLAKE)
-#  35. Intel Alder Lake (MALDERLAKE)
-#  36. Generic-x86-64 (GENERIC_CPU)
-#  37. Generic-x86-64-v2 (GENERIC_CPU2)
-#  38. Generic-x86-64-v3 (GENERIC_CPU3)
-#  39. Generic-x86-64-v4 (GENERIC_CPU4)
-#  40. Intel-Native optimizations autodetected by GCC (MNATIVE_INTEL)
-#  41. AMD-Native optimizations autodetected by GCC (MNATIVE_AMD)
+#  14. AMD Zen 4 (MZEN4)
+#  15. Intel P4 / older Netburst based Xeon (MPSC)
+#  16. Intel Core 2 (MCORE2)
+#  17. Intel Atom (MATOM)
+#  18. Intel Nehalem (MNEHALEM)
+#  19. Intel Westmere (MWESTMERE)
+#  20. Intel Silvermont (MSILVERMONT)
+#  21. Intel Goldmont (MGOLDMONT)
+#  22. Intel Goldmont Plus (MGOLDMONTPLUS)
+#  23. Intel Sandy Bridge (MSANDYBRIDGE)
+#  24. Intel Ivy Bridge (MIVYBRIDGE)
+#  25. Intel Haswell (MHASWELL)
+#  26. Intel Broadwell (MBROADWELL)
+#  27. Intel Skylake (MSKYLAKE)
+#  28. Intel Skylake X (MSKYLAKEX)
+#  29. Intel Cannon Lake (MCANNONLAKE)
+#  30. Intel Ice Lake (MICELAKE)
+#  31. Intel Cascade Lake (MCASCADELAKE)
+#  32. Intel Cooper Lake (MCOOPERLAKE)
+#  33. Intel Tiger Lake (MTIGERLAKE)
+#  34. Intel Sapphire Rapids (MSAPPHIRERAPIDS)
+#  35. Intel Rocket Lake (MROCKETLAKE)
+#  36. Intel Alder Lake (MALDERLAKE)
+#  37. Intel Raptor Lake (MRAPTORLAKE)
+#  38. Intel Meteor Lake (MMETEORLAKE)
+#  39. Intel Emerald Rapids (MEMERALDRAPIDS)
+#  40. Generic-x86-64 (GENERIC_CPU)
+#  41. Generic-x86-64-v2 (GENERIC_CPU2)
+#  42. Generic-x86-64-v3 (GENERIC_CPU3)
+#  43. Generic-x86-64-v4 (GENERIC_CPU4)
+#  44. Intel-Native optimizations autodetected by GCC (MNATIVE_INTEL)
+#  45. AMD-Native optimizations autodetected by GCC (MNATIVE_AMD)
 
 # Check if KERNELDIR is set
 if [ -z ${KERNELDIR} ]; then
@@ -180,7 +184,7 @@ if [[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]]; then
 	fi
 
 	echo "Copying CPU family optimisation patches"
-	cp $CFODIR/more-uarches-for-kernel-5.17+.patch $KERNELDIR || exit
+	cp "$CFODIR/more-uarches-for-kernel-6.8-rc4+.patch" $KERNELDIR || exit
 fi
 
 if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
