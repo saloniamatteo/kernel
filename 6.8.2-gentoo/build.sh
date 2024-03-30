@@ -10,7 +10,7 @@ CONFIGFILE="config"
 # How many threads to use to build Kernel (t440p = -j4, PC = -j9)
 JOBS="-j4"
 # Kernel version
-KVER="6.6.9"
+KVER="6.8.2"
 # Kernel "patch" version
 PVER="-gentoo"
 # Full Kernel version
@@ -168,8 +168,8 @@ fi
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	echo "Copying Clear Linux patches"
 	cp $CLEARDIR/0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch $KERNELDIR || exit
-	cp $CLEARDIR/0{007,008,051,102,104,106,108,109,111}*.patch   $KERNELDIR || exit
-	cp $CLEARDIR/0{120,122,123,130,131,135,158}*.patch                           $KERNELDIR || exit
+	cp $CLEARDIR/0{102,104,106,108,111}*.patch   $KERNELDIR || exit
+	cp $CLEARDIR/0{120,122,123,130,131,135}*.patch                           $KERNELDIR || exit
 fi
 
 if [[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]]; then
