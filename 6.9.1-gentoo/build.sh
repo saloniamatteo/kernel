@@ -267,22 +267,38 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	# Other optimization flags
 	OPTS="-fno-tree-vectorize -mpopcnt"
 
+	# Kernel build timer
 	build_start=$(date "+%s")
-
 	echo "Started build at $(date --date=@$build_start)"
 	echo "Building Kernel Version $(make kernelrelease)"
 
+	# Build Kernel
 	make CC="$cc" KCFLAGS="$KCFLAGS $MATH $OPTS" $JOBS || exit
 	make CC="$cc" $JOBS modules_prepare || exit
-	make CC="$cc" $JOBS modules_install || exit
-	make CC="$cc" $JOBS install || exit
 
+	# Stop Kernel build timer here, as it would be
+	# inappropriate to count disk I/O time together
+	# with CPU & RAM time for compilation.
 	build_end=$(date "+%s")
 	build_diff=$(expr $build_end - $build_start)
-
 	echo "Finished Kernel build at $(date --date=@$build_end)."
 	echo "Took $(date -d@$build_diff -u +%H:%M:%S)."
 
+	# Modules + Kernel install timer
+	install_start=$(date "+%s")
+	echo "Started modules + Kernel install at $(date --date=@$install_start)"
+
+	# Install modules + Kernel
+	make CC="$cc" $JOBS modules_install || exit
+	make CC="$cc" $JOBS install || exit
+
+	# Modules + Kernel install timer stop
+	install_end=$(date "+%s")
+	install_diff=$(expr $install_end - $install_start)
+	echo "Finished modules + Kernel install at $(date --date=@$install_end)."
+	echo "Took $(date -d@$install_diff -u +%H:%M:%S)."
+
+	# V4L2loopback
 	if [[ $@ =~ "-v" || $@ =~ "--v4l2" ]]; then
 		# Check if V4L2DIR exists
 		if [ ! -d "$V4L2DIR" ]; then
@@ -291,7 +307,6 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 		fi
 
 		build_v4l2_start=$(date "+%s")
-
 		echo "Started v4l2loopback build at $(date --date=@$build_v4l2_start)"
 
 		cd $V4L2DIR
@@ -304,11 +319,11 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 
 		build_v4l2_end=$(date "+%s")
 		build_v4l2_diff=$(expr $build_v4l2_end - $build_v4l2_start)
-		build_total=$(expr $build_v4l2_diff + $build_diff)
+		build_total=$(expr $build_v4l2_diff + $build_diff + $install_diff)
 
 		echo "Finished v4l2loopback build at $(date --date=@$build_v4l2_end)."
 		echo "Took $(date -d@$build_v4l2_diff -u +%H:%M:%S)."
-		echo "Total time (Kernel + v4l2loopback): $(date -d@$build_total -u +%H:%M:%S)."
+		echo "Total time (Kernel build + install + v4l2loopback): $(date -d@$build_total -u +%H:%M:%S)."
 	fi
 else
 	echo "Skipping building Kernel. Exiting..."
