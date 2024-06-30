@@ -10,7 +10,7 @@ CONFIGFILE="config"
 # How many threads to use to build Kernel (t440p = -j4, PC = -j9)
 JOBS="-j4"
 # Kernel version
-KVER="6.9.1"
+KVER="6.9.7"
 # Kernel "patch" version
 PVER="-gentoo"
 # Full Kernel version
