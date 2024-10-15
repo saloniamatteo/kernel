@@ -171,9 +171,8 @@ fi
 
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	echo "Copying Clear Linux patches"
-	cp $CLEARDIR/0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch $KERNELDIR || exit
-	cp $CLEARDIR/0{102,104,106,108,111}*.patch   $KERNELDIR || exit
-	cp $CLEARDIR/0{120,122,123,130,131,135}*.patch                           $KERNELDIR || exit
+	cp $CLEARDIR/0{102,104,106,108,111}*.patch		$KERNELDIR || exit
+	cp $CLEARDIR/0{120,122,123,130,131,135}*.patch	$KERNELDIR || exit
 fi
 
 if [[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]]; then
