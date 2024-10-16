@@ -18,7 +18,7 @@ CONFIG_CC_HAS_ASM_GOTO_TIED_OUTPUT=y
 CONFIG_TOOLS_SUPPORT_RELR=y
 CONFIG_CC_HAS_ASM_INLINE=y
 CONFIG_CC_HAS_NO_PROFILE_FN_ATTR=y
-CONFIG_PAHOLE_VERSION=0
+CONFIG_PAHOLE_VERSION=127
 CONFIG_HAVE_CTF_TOOLCHAIN=y
 CONFIG_CONSTRUCTORS=y
 CONFIG_IRQ_WORK=y
@@ -41,12 +41,12 @@ CONFIG_HAVE_KERNEL_XZ=y
 CONFIG_HAVE_KERNEL_LZO=y
 CONFIG_HAVE_KERNEL_LZ4=y
 CONFIG_HAVE_KERNEL_ZSTD=y
-CONFIG_KERNEL_GZIP=y
+# CONFIG_KERNEL_GZIP is not set
 # CONFIG_KERNEL_BZIP2 is not set
 # CONFIG_KERNEL_LZMA is not set
 # CONFIG_KERNEL_XZ is not set
 # CONFIG_KERNEL_LZO is not set
-# CONFIG_KERNEL_LZ4 is not set
+CONFIG_KERNEL_LZ4=y
 # CONFIG_KERNEL_ZSTD is not set
 CONFIG_DEFAULT_INIT=""
 CONFIG_DEFAULT_HOSTNAME="gentoo"
@@ -992,11 +992,11 @@ CONFIG_ZSWAP_SHRINKER_DEFAULT_ON=y
 # CONFIG_ZSWAP_COMPRESSOR_DEFAULT_LZ4HC is not set
 CONFIG_ZSWAP_COMPRESSOR_DEFAULT_ZSTD=y
 CONFIG_ZSWAP_COMPRESSOR_DEFAULT="zstd"
-# CONFIG_ZSWAP_ZPOOL_DEFAULT_ZBUD is not set
+CONFIG_ZSWAP_ZPOOL_DEFAULT_ZBUD=y
 # CONFIG_ZSWAP_ZPOOL_DEFAULT_Z3FOLD_DEPRECATED is not set
-CONFIG_ZSWAP_ZPOOL_DEFAULT_ZSMALLOC=y
-CONFIG_ZSWAP_ZPOOL_DEFAULT="zsmalloc"
-# CONFIG_ZBUD is not set
+# CONFIG_ZSWAP_ZPOOL_DEFAULT_ZSMALLOC is not set
+CONFIG_ZSWAP_ZPOOL_DEFAULT="zbud"
+CONFIG_ZBUD=y
 # CONFIG_Z3FOLD_DEPRECATED is not set
 CONFIG_HAVE_ZSMALLOC=y
 CONFIG_ZSMALLOC=y
@@ -2747,10 +2747,8 @@ CONFIG_MEDIA_CONTROLLER=y
 # Video4Linux options
 #
 CONFIG_VIDEO_V4L2_I2C=y
-CONFIG_VIDEO_V4L2_SUBDEV_API=y
 # CONFIG_VIDEO_ADV_DEBUG is not set
 # CONFIG_VIDEO_FIXED_MINOR_RANGES is not set
-CONFIG_V4L2_MEM2MEM_DEV=m
 # end of Video4Linux options
 
 #
@@ -2805,21 +2803,124 @@ CONFIG_USB_VIDEO_CLASS_INPUT_EVDEV=y
 # CONFIG_USB_HACKRF is not set
 # CONFIG_MEDIA_PCI_SUPPORT is not set
 # CONFIG_RADIO_ADAPTERS is not set
-# CONFIG_MEDIA_PLATFORM_DRIVERS is not set
+CONFIG_MEDIA_PLATFORM_DRIVERS=y
+CONFIG_V4L_PLATFORM_DRIVERS=y
+# CONFIG_SDR_PLATFORM_DRIVERS is not set
+# CONFIG_DVB_PLATFORM_DRIVERS is not set
+# CONFIG_V4L_MEM2MEM_DRIVERS is not set
+
+#
+# Allegro DVT media platform drivers
+#
+
+#
+# Amlogic media platform drivers
+#
+
+#
+# Amphion drivers
+#
+
+#
+# Aspeed media platform drivers
+#
+
+#
+# Atmel media platform drivers
+#
+
+#
+# Cadence media platform drivers
+#
+# CONFIG_VIDEO_CADENCE_CSI2RX is not set
+# CONFIG_VIDEO_CADENCE_CSI2TX is not set
+
+#
+# Chips&Media media platform drivers
+#
+
+#
+# Intel media platform drivers
+#
+
+#
+# Marvell media platform drivers
+#
+# CONFIG_VIDEO_CAFE_CCIC is not set
+
+#
+# Mediatek media platform drivers
+#
+
+#
+# Microchip Technology, Inc. media platform drivers
+#
+
+#
+# Nuvoton media platform drivers
+#
+
+#
+# NVidia media platform drivers
+#
+
+#
+# NXP media platform drivers
+#
+
+#
+# Qualcomm media platform drivers
+#
+
+#
+# Raspberry Pi media platform drivers
+#
+
+#
+# Renesas media platform drivers
+#
+
+#
+# Rockchip media platform drivers
+#
+
+#
+# Samsung media platform drivers
+#
+
+#
+# STMicroelectronics media platform drivers
+#
+
+#
+# Sunxi media platform drivers
+#
+
+#
+# Texas Instruments drivers
+#
+
+#
+# Verisilicon media platform drivers
+#
+
+#
+# VIA media platform drivers
+#
+
+#
+# Xilinx media platform drivers
+#
 CONFIG_V4L_TEST_DRIVERS=y
-CONFIG_VIDEO_VIM2M=m
-CONFIG_VIDEO_VICODEC=m
-CONFIG_VIDEO_VIMC=m
-CONFIG_VIDEO_VIVID=m
-# CONFIG_VIDEO_VIVID_CEC is not set
-CONFIG_VIDEO_VIVID_MAX_DEVS=16
-CONFIG_VIDEO_VISL=m
+# CONFIG_VIDEO_VIM2M is not set
+# CONFIG_VIDEO_VICODEC is not set
+# CONFIG_VIDEO_VIMC is not set
+# CONFIG_VIDEO_VIVID is not set
+# CONFIG_VIDEO_VISL is not set
 CONFIG_UVC_COMMON=m
-CONFIG_VIDEO_V4L2_TPG=m
 CONFIG_VIDEOBUF2_CORE=m
 CONFIG_VIDEOBUF2_V4L2=m
 CONFIG_VIDEOBUF2_MEMOPS=m
-CONFIG_VIDEOBUF2_DMA_CONTIG=m
 CONFIG_VIDEOBUF2_VMALLOC=m
 # end of Media drivers
 
