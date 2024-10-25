@@ -295,7 +295,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	install_end=$(date "+%s")
 	install_diff=$(expr $install_end - $install_start)
 	echo "Finished modules + Kernel install at $(date --date=@$install_end)."
-	echo "Took $(date -d@$install_diff -u +%H:%M:%S)."
+	echo "Took $(date -d@$install_diff -u +%H:%M:%S) (Kernel build took $(date -d@$build_diff -u +%H:%M:%S))."
 
 	# If V4L2loopback is not enabled,
 	# print total build time
