@@ -10,9 +10,9 @@ CONFIGFILE="config"
 # How many threads to use to build Kernel (t440p = -j4, PC = -j9)
 JOBS="-j4"
 # Kernel version
-KVER="6.11.3"
+KVER="6.11.5"
 # Kernel "patch" version
-PVER="-gentoo"
+PVER="-gentoo-r1"
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
 # Location of this directory (custom directory)
