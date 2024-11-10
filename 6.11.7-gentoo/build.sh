@@ -10,9 +10,9 @@ CONFIGFILE="config"
 # How many threads to use to build Kernel (t440p = -j4, PC = -j9)
 JOBS="-j4"
 # Kernel version
-KVER="6.11.5"
+KVER="6.11.7"
 # Kernel "patch" version
-PVER="-gentoo-r1"
+PVER="-gentoo"
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
 # Location of this directory (custom directory)
@@ -196,19 +196,6 @@ for p in *.patch; do
 	echo "Applying patch '$p'..." && patch -Np1 -i $p
 done
 
-echo "Setting config values" &&
-scripts/config --enable  CONFIG_PSI_DEFAULT_DISABLED &&
-scripts/config --disable CONFIG_DEBUG_INFO &&
-scripts/config --disable CONFIG_CGROUP_BPF &&
-scripts/config --disable CONFIG_BPF_LSM &&
-scripts/config --disable CONFIG_BPF_PRELOAD &&
-scripts/config --disable CONFIG_BPF_LIRC_MODE2 &&
-scripts/config --disable CONFIG_BPF_KPROBE_OVERRIDE &&
-scripts/config --disable CONFIG_LATENCYTOP &&
-scripts/config --disable CONFIG_SCHED_DEBUG &&
-scripts/config --disable CONFIG_KVM_WERROR ||
-exit
-
 #echo "Setting version..." &&
 #scripts/setlocalversion --save-scmversion ||
 
@@ -295,7 +282,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	install_end=$(date "+%s")
 	install_diff=$(expr $install_end - $install_start)
 	echo "Finished modules + Kernel install at $(date --date=@$install_end)."
-	echo "Took $(date -d@$install_diff -u +%H:%M:%S) (Kernel build took $(date -d@$build_diff -u +%H:%M:%S))."
+	echo "Took $(date -d@$install_diff -u +%H:%M:%S)."
 
 	# If V4L2loopback is not enabled,
 	# print total build time
