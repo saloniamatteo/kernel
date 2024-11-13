@@ -3,8 +3,6 @@
 # configuration and building process.
 # https://github.com/saloniamatteo/kernel
 
-# Sub-architecture number (25 = Haswell, 35 = Rocket Lake)
-ARCHVER=25
 # Name of the Kernel .config file in local directory
 CONFIGFILE="config"
 # How many threads to use to build Kernel (T440p = -j4, PC = -j9)
@@ -32,56 +30,6 @@ CFODIR="$CUSTDIR/kernel_compiler_patch"
 USRDIR="$CUSTDIR/$KERNVER"
 # Set this variable if your Kernel is not located under /usr/src/
 #KERNELDIR=""
-
-# Note: ARCHVER is the sub-architecture number,
-# which will be used to apply optimizations for your specific CPU.
-# Down below is a list of numbers and their corresponding CPU.
-#
-#   1. AMD Opteron/Athlon64/Hammer/K8 (MK8)
-#   2. AMD Opteron/Athlon64/Hammer/K8 with SSE3 (MK8SSE3)
-#   3. AMD 61xx/7x50/PhenomX3/X4/II/K10 (MK10)
-#   4. AMD Barcelona (MBARCELONA)
-#   5. AMD Bobcat (MBOBCAT)
-#   6. AMD Jaguar (MJAGUAR)
-#   7. AMD Bulldozer (MBULLDOZER)
-#   8. AMD Piledriver (MPILEDRIVER)
-#   9. AMD Steamroller (MSTEAMROLLER)
-#  10. AMD Excavator (MEXCAVATOR)
-#  11. AMD Zen (MZEN)
-#  12. AMD Zen 2 (MZEN2)
-#  13. AMD Zen 3 (MZEN3)
-#  14. AMD Zen 4 (MZEN4)
-#  15. Intel P4 / older Netburst based Xeon (MPSC)
-#  16. Intel Core 2 (MCORE2)
-#  17. Intel Atom (MATOM)
-#  18. Intel Nehalem (MNEHALEM)
-#  19. Intel Westmere (MWESTMERE)
-#  20. Intel Silvermont (MSILVERMONT)
-#  21. Intel Goldmont (MGOLDMONT)
-#  22. Intel Goldmont Plus (MGOLDMONTPLUS)
-#  23. Intel Sandy Bridge (MSANDYBRIDGE)
-#  24. Intel Ivy Bridge (MIVYBRIDGE)
-#  25. Intel Haswell (MHASWELL)
-#  26. Intel Broadwell (MBROADWELL)
-#  27. Intel Skylake (MSKYLAKE)
-#  28. Intel Skylake X (MSKYLAKEX)
-#  29. Intel Cannon Lake (MCANNONLAKE)
-#  30. Intel Ice Lake (MICELAKE)
-#  31. Intel Cascade Lake (MCASCADELAKE)
-#  32. Intel Cooper Lake (MCOOPERLAKE)
-#  33. Intel Tiger Lake (MTIGERLAKE)
-#  34. Intel Sapphire Rapids (MSAPPHIRERAPIDS)
-#  35. Intel Rocket Lake (MROCKETLAKE)
-#  36. Intel Alder Lake (MALDERLAKE)
-#  37. Intel Raptor Lake (MRAPTORLAKE)
-#  38. Intel Meteor Lake (MMETEORLAKE)
-#  39. Intel Emerald Rapids (MEMERALDRAPIDS)
-#  40. Generic-x86-64 (GENERIC_CPU)
-#  41. Generic-x86-64-v2 (GENERIC_CPU2)
-#  42. Generic-x86-64-v3 (GENERIC_CPU3)
-#  43. Generic-x86-64-v4 (GENERIC_CPU4)
-#  44. Intel-Native optimizations autodetected by GCC (MNATIVE_INTEL)
-#  45. AMD-Native optimizations autodetected by GCC (MNATIVE_AMD)
 
 # Check if KERNELDIR is set
 if [ -z ${KERNELDIR} ]; then
@@ -152,9 +100,8 @@ Warning /!\\:
 fi
 
 
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+if [[ "$1" == "-z" || "$1" == "--vars" ]]; then
 	printf "Variables:
-ARCHVER=$ARCHVER
 CONFIGFILE=$CONFIGFILE
 JOBS=$JOBS
 KVER=$KVER
@@ -188,13 +135,11 @@ fi
 
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	CLEAR_PATCHES=(
-		"0001-mm-memcontrol-add-some-branch-hints-based-on-gcov-an.patch"
 		"0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch"
 		"0102-increase-the-ext4-default-commit-age.patch"
 		"0104-pci-pme-wakeups.patch"
 		"0106-intel_idle-tweak-cpuidle-cstates.patch"
 		"0108-smpboot-reuse-timer-calibration.patch"
-		"0109-initialize-ata-before-graphics.patch"
 		"0110-give-rdrand-some-credit.patch"
 		"0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch"
 		"0118-add-scheduler-turbo3-patch.patch"
@@ -252,8 +197,8 @@ echo "Running make olddefconfig" &&
 make $JOBS olddefconfig ||
 exit
 
-echo "Running yes $ARCHVER | make oldconfig && make prepare" &&
-yes $ARCHVER | make $JOBS oldconfig && make $JOBS prepare ||
+echo "Running make oldconfig && make prepare" &&
+make $JOBS oldconfig && make $JOBS prepare ||
 exit
 
 echo "Copying config to config.last" &&
