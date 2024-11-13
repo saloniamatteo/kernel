@@ -223,7 +223,7 @@ if [[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]]; then
 	fi
 
 	echo "Copying CPU family optimisation patches"
-	cp "$CFODIR/more-uarches-for-kernel-6.8-rc4+.patch" $KERNELDIR || exit
+	cp "$CFODIR/more-ISA-levels-and-uarches-for-kernel-6.1.79+.patch" $KERNELDIR || exit
 fi
 
 if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
