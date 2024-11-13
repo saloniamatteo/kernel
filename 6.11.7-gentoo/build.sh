@@ -281,15 +281,10 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	# Modules + Kernel install timer stop
 	install_end=$(date "+%s")
 	install_diff=$(expr $install_end - $install_start)
+	build_total=$(expr $build_diff + $install_diff)
 	echo "Finished modules + Kernel install at $(date --date=@$install_end)."
 	echo "Took $(date -d@$install_diff -u +%H:%M:%S)."
-
-	# If V4L2loopback is not enabled,
-	# print total build time
-	if ! [[ $@ =~ "-v" || $@ =~ "--v4l2" ]]; then
-		build_total=$(expr $build_diff + $install_diff)
-		echo "Total time (Kernel build + install): $(date -d@$build_total -u +%H:%M:%S)."
-	fi
+	echo "Total time (Kernel build + install): $(date -d@$build_total -u +%H:%M:%S)."
 
 	# V4L2loopback
 	if [[ $@ =~ "-v" || $@ =~ "--v4l2" ]]; then
