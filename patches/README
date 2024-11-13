@@ -1,0 +1,18 @@
+=========================================================================
+This document lists and explains the patches contained in this directory,
+where they were downloaded from, and what Kernel they target.
+=========================================================================
+ Matteo Salonia    https://salonia.it   https://github.com/saloniamatteo
+=========================================================================
+
+0001-address-masking	Various address masking fixes/improvements
+						Patch downloaded from CachyOS:
+						https://github.com/CachyOS/kernel-patches
+
+0002-bbv3				BBRv3 support. (Google)
+						Patch downloaded from CachyOS:
+						https://github.com/CachyOS/kernel-patches
+
+0003-ntsync				Add NT timing primitives to improve WINE perf
+						Patch downloaded from CachyOS:
+						https://github.com/CachyOS/kernel-patches

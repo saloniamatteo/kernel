@@ -7,9 +7,10 @@
 ARCHVER=25
 # Name of the Kernel .config file in local directory
 CONFIGFILE="config"
-# How many threads to use to build Kernel (t440p = -j4, PC = -j9)
+# How many threads to use to build Kernel (T440p = -j4, PC = -j9)
 JOBS="-j4"
 # Kernel version
+# NOTE: This MUST be of the form x.y.z, otherwise things WILL break!
 KVER="6.11.7"
 # Kernel "patch" version
 PVER="-gentoo"
@@ -21,6 +22,8 @@ CUSTDIR="/usr/src/usr-kernel"
 CLEARDIR="$CUSTDIR/clear-patches"
 # Location of included patches
 PATCHDIR="$CUSTDIR/patches"
+# Location of BORE sched patch
+BOREDIR="$CUSTDIR/bore-scheduler"
 # Location of v4l2loopback directory
 V4L2DIR="$CUSTDIR/v4l2loopback"
 # Location of CPU family optimizations directory
@@ -113,32 +116,44 @@ if [ ! -f "$USRDIR/config" ]; then
 	exit
 fi
 
-# If argument is "-h" or "--help", print exit codes
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 	printf "Flags:
--b,--skip-build Skip building the Kernel
--c,--skip-cfg   Skip copying Kernel configuration
--d,--distcc     Use distcc to speed up compilation
--e,--ccache     Use ccache to speed up compilation
--f,--fastmath   Build Kernel with Unsafe Fast Math [*]
--h,--help       Print this help and exit
--l,--clearl-ps  Enable Clear Linux patches [*]
--m,--menuconfig Run 'make menuconfig' in Kernel directory and exit
--o,--cpu-opts   Build Kernel with CPU family optimisations [*]
--p,--patches    Apply user patches (recommended)
--v,--v4l2       Build v4l2loopback Kernel module
+-b,--skip-build     Do not build the Kernel
+-c,--skip-cfg       Do not copy the Kernel config from this directory
+-d,--distcc         Use distcc to speed up compilation /!\\
+-e,--ccache         Use ccache to speed up compilation /!\\
+-f,--fastmath       Build Kernel with Unsafe Fast Math [*]
+-h,--help           Print this help and exit
+-l,--clearl-ps      Enable Clear Linux patches [*]
+-m,--menuconfig     Run 'make menuconfig' in Kernel directory and exit
+-o,--cpu-opts       Build Kernel with CPU family optimisations [*]
+-p,--patches        Apply provided patches (recommended) [*]
+-r,--bore           Build Kernel with BORE scheduler [*]
+-v,--v4l2           Build v4l2loopback Kernel module
+-z,--vars           Print variables and exit
 
 Note:
-    - All options marked with '[*]', when enabled, may or may not
-	  improve the performance of the Kernel at runtime, at the cost
-	  of slightly longer compilation time, and/or slightly higher Kernel size.
-    - Clear Linux patches are HIGHLY recommended for Intel CPUs.
-    - Distcc is recommended if it is properly set up, as it uses
-	  the computing power of other hosts to compile the Kernel.
-    - CCache is recommended only when recompiling the same Kernel multiple times.
-Results may vary.
+  - All options marked with '[*]', when enabled, may improve
+    Kernel performance, whether it may be CPU, I/O, network, etc.
+  - It is highly recommended to enable Clear Linux patches,
+    CPU family optimizations, provided patches, as well as the BORE scheduler.
+	Unsafe fast math may have a negligible performance increase,
+	depending on your system. Use at your own risk!
+  - If you're planning on using v4l2loopback with your own config,
+    please read: https://github.com/umlaeute/v4l2loopback/discussions/604
 
-Variables:
+Warning /!\\:
+  - Distcc is recommended only if it is properly set up,
+    and when you have powerful enough hosts.
+  - CCache is recommended only if it is properly set up,
+    and only when recompiling the same Kernel multiple times.
+"
+	exit
+fi
+
+
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+	printf "Variables:
 ARCHVER=$ARCHVER
 CONFIGFILE=$CONFIGFILE
 JOBS=$JOBS
@@ -148,8 +163,10 @@ KERNVER=$KERNVER
 CUSTDIR=$CUSTDIR
 CLEARDIR=$CLEARDIR
 PATCHDIR=$PATCHDIR
+BOREDIR=$BOREDIR
 V4L2DIR=$V4L2DIR
 USRDIR=$USRDIR
+KERNELDIR=$KERNELDIR
 "
 	exit
 fi
@@ -170,9 +187,32 @@ else
 fi
 
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
+	CLEAR_PATCHES=(
+		"0001-mm-memcontrol-add-some-branch-hints-based-on-gcov-an.patch"
+		"0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch"
+		"0102-increase-the-ext4-default-commit-age.patch"
+		"0104-pci-pme-wakeups.patch"
+		"0106-intel_idle-tweak-cpuidle-cstates.patch"
+		"0108-smpboot-reuse-timer-calibration.patch"
+		"0109-initialize-ata-before-graphics.patch"
+		"0110-give-rdrand-some-credit.patch"
+		"0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch"
+		"0118-add-scheduler-turbo3-patch.patch"
+		"0120-do-accept-in-LIFO-order-for-cache-efficiency.patch"
+		"0121-locking-rwsem-spin-faster.patch"
+		"0122-ata-libahci-ignore-staggered-spin-up.patch"
+		"0131-add-a-per-cpu-minimum-high-watermark-an-tune-batch-s.patch"
+		"0135-initcall-only-print-non-zero-initcall-debug-to-speed.patch"
+		"0136-crypto-kdf-make-the-module-init-call-a-late-init-cal.patch"
+		"0158-clocksource-only-perform-extended-clocksource-checks.patch"
+		"0161-ACPI-align-slab-buffers-for-improved-memory-performa.patch"
+	)
+
 	echo "Copying Clear Linux patches"
-	cp $CLEARDIR/0{102,104,106,108,111}*.patch		$KERNELDIR || exit
-	cp $CLEARDIR/0{120,122,123}*.patch	$KERNELDIR || exit
+	for patch in ${CLEAR_PATCHES[@]}; do
+		echo "Copying $patch"
+		cp $CLEARDIR/$patch $KERNELDIR || exit
+	done
 fi
 
 if [[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]]; then
@@ -188,7 +228,16 @@ fi
 
 if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
 	echo "Copying user patches"
-	cp $PATCHDIR/0*.patch $KERNELDIR || exit
+	cp $PATCHDIR/*.patch $KERNELDIR || exit
+fi
+
+if [[ $@ =~ "-r" || $@ =~ "--bore" ]]; then
+	# Extract the major version
+	# Example: KVER: 6.11.7, KVER_MAJ: 6.11
+	KVER_MAJ="${KVER%.*}"
+
+	echo "Copying BORE patch"
+	cp $BOREDIR/patches/stable/linux-$KVER_MAJ-bore/*patch $KERNELDIR || exit
 fi
 
 echo "Applying Clear Linux and/or user patches (if any)"
@@ -250,8 +299,16 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 		MATH=""
 	fi
 
+	# Extra optimimization flags:
+	# -fivopts:
+    #   Perform induction variable optimizations (strength reduction,
+    #   induction variable merging and induction variable elimination) on trees.
+  	# -fmodulo-sched:
+    #   Perform swing modulo scheduling immediately before the first
+    #   scheduling pass. This pass looks at innermost loops and reorders
+    #   their instructions by overlapping different iterations.
 	# Other optimization flags
-	OPTS="-fno-tree-vectorize -mpopcnt"
+	OPTS="-fivopts -fmodulo-sched -fno-tree-vectorize -mpopcnt"
 
 	# Kernel build timer
 	build_start=$(date "+%s")

@@ -7,3 +7,6 @@
 [submodule "clear-patches"]
 	path = clear-patches
 	url = https://github.com/clearlinux-pkgs/linux
+[submodule "bore-scheduler"]
+	path = bore-scheduler
+	url = https://github.com/firelzrd/bore-scheduler
