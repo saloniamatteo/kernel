@@ -4,6 +4,9 @@ This is the Kernel configuration I use on Gentoo Linux
 
 Documentation: https://salonia.it/kernel
 
+## Donate
+Support this project: [salonia.it/donate](https://salonia.it/donate)
+
 ## Note
 You will find 2 config files in each Kernel directory, `config` and `config.pc`.
 
