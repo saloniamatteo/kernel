@@ -5,11 +5,11 @@
 
 # Name of the Kernel .config file in local directory
 CONFIGFILE="config"
-# How many threads to use to build Kernel (T440p = -j4, PC = -j9)
-JOBS="-j4"
+# How many threads to use to build Kernel (T470p = j6, T440p = -j4, PC = -j9)
+JOBS="-j6"
 # Kernel version
 # NOTE: This MUST be of the form x.y.z, otherwise things WILL break!
-KVER="6.11.7"
+KVER="6.12.4"
 # Kernel "patch" version
 PVER="-gentoo"
 # Full Kernel version
@@ -140,9 +140,7 @@ if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 		"0104-pci-pme-wakeups.patch"
 		"0106-intel_idle-tweak-cpuidle-cstates.patch"
 		"0108-smpboot-reuse-timer-calibration.patch"
-		"0110-give-rdrand-some-credit.patch"
 		"0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch"
-		"0118-add-scheduler-turbo3-patch.patch"
 		"0120-do-accept-in-LIFO-order-for-cache-efficiency.patch"
 		"0121-locking-rwsem-spin-faster.patch"
 		"0122-ata-libahci-ignore-staggered-spin-up.patch"
