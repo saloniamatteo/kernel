@@ -9,7 +9,7 @@ CONFIGFILE="config"
 JOBS="-j6"
 # Kernel version
 # NOTE: This MUST be of the form x.y.z, otherwise things WILL break!
-KVER="6.12.4"
+KVER="6.12.8"
 # Kernel "patch" version
 PVER="-gentoo"
 # Full Kernel version
@@ -71,6 +71,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 -d,--distcc         Use distcc to speed up compilation /!\\
 -e,--ccache         Use ccache to speed up compilation /!\\
 -f,--fastmath       Build Kernel with Unsafe Fast Math [*]
+-g,--graphite       Build Kernel with Graphite [*]
 -h,--help           Print this help and exit
 -l,--clearl-ps      Enable Clear Linux patches [*]
 -m,--menuconfig     Run 'make menuconfig' in Kernel directory and exit
@@ -86,7 +87,7 @@ Note:
   - It is highly recommended to enable Clear Linux patches,
     CPU family optimizations, provided patches, as well as the BORE scheduler.
 	Unsafe fast math may have a negligible performance increase,
-	depending on your system. Use at your own risk!
+	just like Graphite, depending on your system. Use at your own risk!
   - If you're planning on using v4l2loopback with your own config,
     please read: https://github.com/umlaeute/v4l2loopback/discussions/604
 
@@ -216,9 +217,6 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	# Don't use build timestap (slows down cache)
 	export KBUILD_BUILD_TIMESTAMP=""
 
-	# Math optimizations
-	FAST_MATH="-fno-signed-zeros -fno-trapping-math -fassociative-math -freciprocal-math -fno-math-errno -ffinite-math-only -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fexcess-precision=fast"
-
 	# Check if we can use ccache
 	if [[ $@ =~ "-e" || $@ =~ "--ccache" ]]; then
 		echo "Using ccache..."
@@ -235,11 +233,18 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 
 	echo "Compiler command (CC): $cc"
 
-	# Check if Fast Math is enabled
+	# Check if Unsafe Fast Math is enabled
 	if [[ $@ =~ "-f" || $@ =~ "--fastmath" ]]; then
-		MATH="$FAST_MATH"
+		MATH="-fno-signed-zeros -fno-trapping-math -fassociative-math -freciprocal-math -fno-math-errno -ffinite-math-only -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fexcess-precision=fast"
 	else
 		MATH=""
+	fi
+
+	# Check if Graphite is enabled
+	if [[ $@ =~ "-g" || $@ =~ "--graphite" ]]; then
+		GRAPHITE="-fgraphite-identity -floop-nest-optimize"
+	else
+		GRAPHITE=""
 	fi
 
 	# Extra optimimization flags:
@@ -250,8 +255,14 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
     #   Perform swing modulo scheduling immediately before the first
     #   scheduling pass. This pass looks at innermost loops and reorders
     #   their instructions by overlapping different iterations.
-	# Other optimization flags
-	OPTS="-fivopts -fmodulo-sched -fno-tree-vectorize -mpopcnt"
+	# -fno-tree-vectorize:
+	#   Do not perform vectorization on trees.
+	# -floop-interchange:
+	#   Perform loop interchange outside of graphite.
+	#   This flag can improve cache performance on loop nest,
+	#   and allow further loop optimizations, like vectorization,
+	#   to take place.
+	OPTS="-fivopts -fmodulo-sched -floop-interchange"
 
 	# Kernel build timer
 	build_start=$(date "+%s")
@@ -259,7 +270,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	echo "Building Kernel Version $(make kernelrelease)"
 
 	# Build Kernel
-	make CC="$cc" KCFLAGS="$KCFLAGS $MATH $OPTS" $JOBS || exit
+	make CC="$cc" KCFLAGS="$KCFLAGS $MATH $GRAPHITE $OPTS" $JOBS || exit
 	make CC="$cc" $JOBS modules_prepare || exit
 
 	# Stop Kernel build timer here, as it would be
