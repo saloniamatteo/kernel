@@ -1,21 +1,39 @@
 #!/bin/bash
 # This script allows users to simplify the Kernel
-# configuration and building process.
+# configuration, compilation & installation process.
 # https://github.com/saloniamatteo/kernel
+# ======================================================
 
-# Name of the Kernel .config file in local directory
-CONFIGFILE="config"
-# How many threads to use to build Kernel (T470p = j6, T440p = -j4, PC = -j9)
+# Directory containing the provided assets
+# Change this to reflect your preferences
+# Default is /usr/src/usr-kernel
+CUSTDIR="/usr/src/usr-kernel"
+
+# Kernel versions
+# NOTE: $KVER MUST be of the form x.y.z, otherwise things WILL break!
+KVER="6.12.8"	# Primary Kernel version
+PVER="-gentoo"	# Kernel "patch" version
+
+# Set this variable if your Kernel is not located under /usr/src/
+# Default is empty
+#KERNELDIR=""
+
+# How many threads to use to build Kernel
+# T470p = -j6
+# T440p = -j4
+# PC = -j9
+# You can set any value you like.
 JOBS="-j6"
-# Kernel version
-# NOTE: This MUST be of the form x.y.z, otherwise things WILL break!
-KVER="6.12.8"
-# Kernel "patch" version
-PVER="-gentoo"
+
+# Name of the Kernel config file under $CUSTDIR/$KERNVER
+# Choose between "config", "config.t440p", "config.pc"
+# You can provide your own config file by placing it under $CUSTDIR/$KERNVER.
+CONFIGFILE="config"
+
+# ======================================================
+# Do not modify these unless you know what you're doing.
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
-# Location of this directory (custom directory)
-CUSTDIR="/usr/src/usr-kernel"
 # Location of Clear Linux patch directory
 CLEARDIR="$CUSTDIR/clear-patches"
 # Location of included patches
@@ -28,8 +46,6 @@ V4L2DIR="$CUSTDIR/v4l2loopback"
 CFODIR="$CUSTDIR/kernel_compiler_patch"
 # Location of Kernel-specific user directory
 USRDIR="$CUSTDIR/$KERNVER"
-# Set this variable if your Kernel is not located under /usr/src/
-#KERNELDIR=""
 
 # Check if KERNELDIR is set
 if [ -z ${KERNELDIR} ]; then
@@ -64,6 +80,7 @@ if [ ! -f "$USRDIR/config" ]; then
 	exit
 fi
 
+# Print help
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 	printf "Flags:
 -b,--skip-build     Do not build the Kernel
@@ -96,11 +113,17 @@ Warning /!\\:
     and when you have powerful enough hosts.
   - CCache is recommended only if it is properly set up,
     and only when recompiling the same Kernel multiple times.
+
+Gentoo users:
+  It is highly recommended you use 'sys-kernel/installkernel' to automatically
+  create the initramfs & update the bootloader config, by respecting your
+  system preferences (e.g. initramfs->dracut, bootloader->GRUB).
+  https://packages.gentoo.org/packages/sys-kernel/installkernel
 "
 	exit
 fi
 
-
+# Print variables
 if [[ "$1" == "-z" || "$1" == "--vars" ]]; then
 	printf "Variables:
 CONFIGFILE=$CONFIGFILE
@@ -119,21 +142,28 @@ KERNELDIR=$KERNELDIR
 	exit
 fi
 
-cd $KERNELDIR
+# Make sure we're in the right directory
+cd "$KERNELDIR"
 
 # Revert and remove any patches first
-echo "Reverting and removing pre-existing patches (if any)" && for p in *.patch; do echo "Reverting patch $p..."; patch -Rfsp1 -i $p; done
+echo "Reverting and removing pre-existing patches (if any)" &&
+for p in *.patch; do
+	echo "Reverting patch $p..."
+	patch -Rfsp1 -i $p
+done
 rm *.patch
 
+# Copy Kernel config
 if ! [[ $@ =~ "-c" || $@ =~ "--skip-cfg" ]]; then
 	echo "Copying config" &&
-	cp $USRDIR/$CONFIGFILE $KERNELDIR/config &&
+	cp "$USRDIR/$CONFIGFILE" "$KERNELDIR/config" &&
 	cp config .config ||
 	exit
 else
 	echo "Skipping copying config.."
 fi
 
+# Copy Clear Linux patches
 if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	CLEAR_PATCHES=(
 		"0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch"
@@ -155,10 +185,11 @@ if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 	echo "Copying Clear Linux patches"
 	for patch in ${CLEAR_PATCHES[@]}; do
 		echo "Copying $patch"
-		cp $CLEARDIR/$patch $KERNELDIR || exit
+		cp "$CLEARDIR/$patch" "$KERNELDIR" || exit
 	done
 fi
 
+# Copy CPU family opts patches
 if [[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]]; then
 	# Check if CPU family optimizations directory exists
 	if [ ! -d "$CFODIR" ]; then
@@ -167,21 +198,23 @@ if [[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]]; then
 	fi
 
 	echo "Copying CPU family optimisation patches"
-	cp "$CFODIR/more-ISA-levels-and-uarches-for-kernel-6.1.79+.patch" $KERNELDIR || exit
+	cp "$CFODIR/more-ISA-levels-and-uarches-for-kernel-6.1.79+.patch" "$KERNELDIR" || exit
 fi
 
+# Copy provided patches
 if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
-	echo "Copying user patches"
+	echo "Copying provided patches"
 	cp $PATCHDIR/*.patch $KERNELDIR || exit
 fi
 
+# Copy BORE sched patch
 if [[ $@ =~ "-r" || $@ =~ "--bore" ]]; then
 	# Extract the major version
 	# Example: KVER: 6.11.7, KVER_MAJ: 6.11
 	KVER_MAJ="${KVER%.*}"
 
 	echo "Copying BORE patch"
-	cp $BOREDIR/patches/stable/linux-$KVER_MAJ-bore/*patch $KERNELDIR || exit
+	cp "$BOREDIR/patches/stable/linux-$KVER_MAJ-bore/*patch" "$KERNELDIR" || exit
 fi
 
 echo "Applying Clear Linux and/or user patches (if any)"
@@ -192,27 +225,25 @@ done
 #echo "Setting version..." &&
 #scripts/setlocalversion --save-scmversion ||
 
-echo "Running make olddefconfig" &&
-make $JOBS olddefconfig ||
-exit
+# make olddefconfig
+echo "Running make olddefconfig" && make $JOBS olddefconfig || exit
 
-echo "Running make oldconfig && make prepare" &&
-make $JOBS oldconfig && make $JOBS prepare ||
-exit
+# make oldconfig & make prepare
+echo "Running make oldconfig && make prepare" && make $JOBS oldconfig && make $JOBS prepare || exit
 
-echo "Copying config to config.last" &&
-cp .config config.last ||
-exit
+# Backup existing Kernel .config
+echo "Copying existing Kernel config to config.last" && cp .config config.last || exit
 
-echo "Running make clean" &&
-make $JOBS clean ||
-exit
+# make clean
+echo "Running make clean" && make $JOBS clean || exit
 
+# make menuconfig
 if [[ $@ =~ "-m" || $@ =~ "--menuconfig" ]]; then
 	make $JOBS menuconfig
 	exit
 fi
 
+# Skip Kernel build?
 if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	# Don't use build timestap (slows down cache)
 	export KBUILD_BUILD_TIMESTAMP=""
@@ -231,6 +262,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 		cc="distcc $cc"
 	fi
 
+	# Specify which compiler we're using
 	echo "Compiler command (CC): $cc"
 
 	# Check if Unsafe Fast Math is enabled
@@ -255,8 +287,6 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
     #   Perform swing modulo scheduling immediately before the first
     #   scheduling pass. This pass looks at innermost loops and reorders
     #   their instructions by overlapping different iterations.
-	# -fno-tree-vectorize:
-	#   Do not perform vectorization on trees.
 	# -floop-interchange:
 	#   Perform loop interchange outside of graphite.
 	#   This flag can improve cache performance on loop nest,
@@ -273,9 +303,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	make CC="$cc" KCFLAGS="$KCFLAGS $MATH $GRAPHITE $OPTS" $JOBS || exit
 	make CC="$cc" $JOBS modules_prepare || exit
 
-	# Stop Kernel build timer here, as it would be
-	# inappropriate to count disk I/O time together
-	# with CPU & RAM time for compilation.
+	# Kernel build timer
 	build_end=$(date "+%s")
 	build_diff=$(expr $build_end - $build_start)
 	echo "Finished Kernel build at $(date --date=@$build_end)."
@@ -283,9 +311,11 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 
 	# Modules + Kernel install timer
 	install_start=$(date "+%s")
-	echo "Started modules + Kernel install at $(date --date=@$install_start)"
+	echo "Started Modules + Kernel install at $(date --date=@$install_start)"
 
 	# Install modules + Kernel
+	# NOTE: it is highly recommended you use "installkernel".
+	# https://packages.gentoo.org/packages/sys-kernel/installkernel
 	make CC="$cc" $JOBS modules_install || exit
 	make CC="$cc" $JOBS install || exit
 
@@ -305,21 +335,22 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 			exit
 		fi
 
+		# V4L2loopback timer
 		build_v4l2_start=$(date "+%s")
 		echo "Started v4l2loopback build at $(date --date=@$build_v4l2_start)"
 
+		# Compile V4L2loopback
 		cd $V4L2DIR
-
 		make $JOBS KERNELRELEASE=$KERNVER || exit
 		make KERNELRELEASE=$KERNVER install || exit
 
 		# Reload module dependencies
 		depmod -a
 
+		# V4L2loopback timer
 		build_v4l2_end=$(date "+%s")
 		build_v4l2_diff=$(expr $build_v4l2_end - $build_v4l2_start)
 		build_total=$(expr $build_v4l2_diff + $build_diff + $install_diff)
-
 		echo "Finished v4l2loopback build at $(date --date=@$build_v4l2_end)."
 		echo "Took $(date -d@$build_v4l2_diff -u +%H:%M:%S)."
 		echo "Total time (Kernel build + install + v4l2loopback): $(date -d@$build_total -u +%H:%M:%S)."

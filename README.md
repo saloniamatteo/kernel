@@ -10,7 +10,8 @@ Support this project: [salonia.it/donate](https://salonia.it/donate)
 ## Note
 You will find 2 config files in each Kernel directory, `config` and `config.pc`.
 
-- `config` is geared towards a ThinkPad T440p.
+- `config` is geared towards a ThinkPad T470p.
+- `config.t440p` is geared towards a ThinkPad T440p.
 - `config.pc` is geared towards my workstation.
 
 See more details here: https://salonia.it/kernel#intro
