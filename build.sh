@@ -11,7 +11,7 @@ CUSTDIR="/usr/src/usr-kernel"
 
 # Kernel versions
 # NOTE: $KVER MUST be of the form x.y.z, otherwise things WILL break!
-KVER="6.12.8"	# Primary Kernel version
+KVER="6.13.0"	# Primary Kernel version
 PVER="-gentoo"	# Kernel "patch" version
 
 # Set this variable if your Kernel is not located under /usr/src/
@@ -81,7 +81,7 @@ if [ ! -f "$USRDIR/config" ]; then
 fi
 
 # Print help
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+if [[ $@ =~ "-h" || $@ =~ "--help" ]]; then
 	printf "Flags:
 -b,--skip-build     Do not build the Kernel
 -c,--skip-cfg       Do not copy the Kernel config from this directory
@@ -124,7 +124,7 @@ Gentoo users:
 fi
 
 # Print variables
-if [[ "$1" == "-z" || "$1" == "--vars" ]]; then
+if [[ $@ =~ "-z" || $@ =~ "--vars" ]]; then
 	printf "Variables:
 CONFIGFILE=$CONFIGFILE
 JOBS=$JOBS
