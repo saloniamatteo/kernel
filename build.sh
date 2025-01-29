@@ -214,7 +214,7 @@ if [[ $@ =~ "-r" || $@ =~ "--bore" ]]; then
 	KVER_MAJ="${KVER%.*}"
 
 	echo "Copying BORE patch"
-	cp "$BOREDIR/patches/stable/linux-$KVER_MAJ-bore/*patch" "$KERNELDIR" || exit
+	cp $BOREDIR/patches/stable/linux-$KVER_MAJ-bore/*patch "$KERNELDIR" || exit
 fi
 
 echo "Applying Clear Linux and/or user patches (if any)"
