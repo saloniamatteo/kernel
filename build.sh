@@ -80,8 +80,42 @@ if [ ! -f "$USRDIR/config" ]; then
 	exit
 fi
 
+# Set variables based on flag status
+[[ $@ =~ "-b" || $@ =~ "--skip-build" ]] && F_SKIP_BUILD=1
+[[ $@ =~ "-c" || $@ =~ "--skip-cfg" ]] && F_SKIP_CFG=1
+[[ $@ =~ "-d" || $@ =~ "--distcc" ]] && F_DISTCC=1
+[[ $@ =~ "-e" || $@ =~ "--ccache" ]] && F_CCACHE=1
+[[ $@ =~ "-f" || $@ =~ "--fastmath" ]] && F_FASTMATH=1
+[[ $@ =~ "-g" || $@ =~ "--graphite" ]] && F_GRAPHITE=1
+[[ $@ =~ "-h" || $@ =~ "--help" ]] && F_PRINT_HELP=1
+[[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]] && F_CLEARLINUX_PATCHES=1
+[[ $@ =~ "-m" || $@ =~ "--menuconfig" ]] && F_MENUCONFIG=1
+[[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]] && F_CPU_OPTS=1
+[[ $@ =~ "-p" || $@ =~ "--patches" ]] && F_PATCHES=1
+[[ $@ =~ "-r" || $@ =~ "--bore" ]] && F_BORE=1
+[[ $@ =~ "-v" || $@ =~ "--v4l2" ]] && F_V4L2=1
+[[ $@ =~ "-z" || $@ =~ "--vars" ]] && F_PRINT_VARS=1
+
+# Flag presets
+if [[ $@ =~ "--preset-configure" ]]; then
+	F_CLEARLINUX_PATCHES=1
+	F_MENUCONFIG=1
+	F_CPU_OPTS=1
+	F_PATCHES=1
+	F_BORE=1
+else if [[ $@ =~ "--preset-build" ]]; then
+	F_FASTMATH=1
+	F_GRAPHITE=1
+	F_CLEARLINUX_PATCHES=1
+	F_MENUCONFIG=0
+	F_CPU_OPTS=1
+	F_PATCHES=1
+	F_BORE=1
+fi
+fi
+
 # Print help
-if [[ $@ =~ "-h" || $@ =~ "--help" ]]; then
+if [ $F_PRINT_HELP ]; then
 	printf "Flags:
 -b,--skip-build     Do not build the Kernel
 -c,--skip-cfg       Do not copy the Kernel config from this directory
@@ -97,6 +131,13 @@ if [[ $@ =~ "-h" || $@ =~ "--help" ]]; then
 -r,--bore           Build Kernel with BORE scheduler [*]
 -v,--v4l2           Build v4l2loopback Kernel module
 -z,--vars           Print variables and exit
+
+Presets (mutually exclusive):
+--preset-configure	Selects the following flags:
+			-f, -g, -l, -o, -p, -r
+
+--preset-build		Selects the following flags:
+			-l, -m, -o, -p, -r
 
 Note:
   - All options marked with '[*]', when enabled, may improve
@@ -124,7 +165,7 @@ Gentoo users:
 fi
 
 # Print variables
-if [[ $@ =~ "-z" || $@ =~ "--vars" ]]; then
+if [ $F_PRINT_VARS ]; then
 	printf "Variables:
 CONFIGFILE=$CONFIGFILE
 JOBS=$JOBS
@@ -154,7 +195,7 @@ done
 rm *.patch
 
 # Copy Kernel config
-if ! [[ $@ =~ "-c" || $@ =~ "--skip-cfg" ]]; then
+if ! [ $F_SKIP_CFG ]; then
 	echo "Copying config" &&
 	cp "$USRDIR/$CONFIGFILE" "$KERNELDIR/config" &&
 	cp config .config ||
@@ -164,7 +205,7 @@ else
 fi
 
 # Copy Clear Linux patches
-if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
+if [ $F_CLEARLINUX_PATCHES ]; then
 	CLEAR_PATCHES=(
 		"0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch"
 		"0102-increase-the-ext4-default-commit-age.patch"
@@ -190,7 +231,7 @@ if [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]]; then
 fi
 
 # Copy CPU family opts patches
-if [[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]]; then
+if [ $F_CPU_OPTS ]; then
 	# Check if CPU family optimizations directory exists
 	if [ ! -d "$CFODIR" ]; then
 		echo "Could not find CPU family optimisations directory."
@@ -202,13 +243,13 @@ if [[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]]; then
 fi
 
 # Copy provided patches
-if [[ $@ =~ "-p" || $@ =~ "--patches" ]]; then
+if [ $F_PATCHES ]; then
 	echo "Copying provided patches"
 	cp $PATCHDIR/*.patch $KERNELDIR || exit
 fi
 
 # Copy BORE sched patch
-if [[ $@ =~ "-r" || $@ =~ "--bore" ]]; then
+if [ $F_BORE ]; then
 	# Extract the major version
 	# Example: KVER: 6.11.7, KVER_MAJ: 6.11
 	KVER_MAJ="${KVER%.*}"
@@ -238,18 +279,18 @@ echo "Copying existing Kernel config to config.last" && cp .config config.last |
 echo "Running make clean" && make $JOBS clean || exit
 
 # make menuconfig
-if [[ $@ =~ "-m" || $@ =~ "--menuconfig" ]]; then
+if [ $F_MENUCONFIG ]; then
 	make $JOBS menuconfig
 	exit
 fi
 
 # Skip Kernel build?
-if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
+if ! [ $F_SKIP_BUILD ]; then
 	# Don't use build timestap (slows down cache)
 	export KBUILD_BUILD_TIMESTAMP=""
 
 	# Check if we can use ccache
-	if [[ $@ =~ "-e" || $@ =~ "--ccache" ]]; then
+	if [ $F_CCACHE ]; then
 		echo "Using ccache..."
 		cc="ccache gcc"
 	else
@@ -257,7 +298,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	fi
 
 	# Check if we can use distcc
-	if [[ $@ =~ "-d" || $@ =~ "--distcc" ]]; then
+	if [ $F_DISTCC ]; then
 		echo "Using distcc..."
 		cc="distcc $cc"
 	fi
@@ -266,14 +307,14 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	echo "Compiler command (CC): $cc"
 
 	# Check if Unsafe Fast Math is enabled
-	if [[ $@ =~ "-f" || $@ =~ "--fastmath" ]]; then
+	if [ $F_FASTMATH ]; then
 		MATH="-fno-signed-zeros -fno-trapping-math -fassociative-math -freciprocal-math -fno-math-errno -ffinite-math-only -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fexcess-precision=fast"
 	else
 		MATH=""
 	fi
 
 	# Check if Graphite is enabled
-	if [[ $@ =~ "-g" || $@ =~ "--graphite" ]]; then
+	if [ $F_GRAPHITE ]; then
 		GRAPHITE="-fgraphite-identity -floop-nest-optimize"
 	else
 		GRAPHITE=""
@@ -328,7 +369,7 @@ if ! [[ $@ =~ "-b" || $@ =~ "--skip-build" ]]; then
 	echo "Total time (Kernel build + install): $(date -d@$build_total -u +%H:%M:%S)."
 
 	# V4L2loopback
-	if [[ $@ =~ "-v" || $@ =~ "--v4l2" ]]; then
+	if [ $F_V4L2 ]; then
 		# Check if V4L2DIR exists
 		if [ ! -d "$V4L2DIR" ]; then
 			echo "Could not find v4l2loopback directory.";
