@@ -16,3 +16,7 @@ where they were downloaded from, and what Kernel they target.
 0003-ntsync				Add NT timing primitives to improve WINE perf
 						Patch downloaded from CachyOS:
 						https://github.com/CachyOS/kernel-patches
+
+0004-glitched-cfs		Add HZ_500 & HZ_750
+						Patch downloaded from Linux-TKG:
+						https://github.com/Frogging-Family/linux-tkg
