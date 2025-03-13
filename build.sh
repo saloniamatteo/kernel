@@ -81,6 +81,22 @@ if [ ! -f "$USRDIR/config" ]; then
 fi
 
 # Set variables based on flag status
+F_SKIP_BUILD=0			# Do not build the kernel
+F_SKIP_CFG=0			# Do not copy the Kernel config to Kernel directory
+F_DISTCC=0				# Use distcc to speed up compilation
+F_CCACHE=0				# Use ccache to speed up compilation
+F_FASTMATH=0			# Build Kernel with Unsafe Fast Math
+F_GRAPHITE=0			# Build Kernel with Graphite
+F_PRINT_HELP=0			# Print help and exit
+F_CLEARLINUX_PATCHES=0	# Enable Clear Linux patches
+F_MENUCONFIG=0			# Run 'make menuconfig' in Kernel directory and exit
+F_CPU_OPTS=0			# Build Kernel with CPU family optimisations
+F_PATCHES=0				# Apply provided patches (recommended)
+F_BORE=0				# Build Kernel with BORE scheduler
+F_V4L2=0				# Build v4l2loopback Kernel module
+F_PRINT_VARS=0			# Print flags and exit
+F_PRINT_FLAGS=0			# Print variables and exit
+
 [[ $@ =~ "-b" || $@ =~ "--skip-build" ]] && F_SKIP_BUILD=1
 [[ $@ =~ "-c" || $@ =~ "--skip-cfg" ]] && F_SKIP_CFG=1
 [[ $@ =~ "-d" || $@ =~ "--distcc" ]] && F_DISTCC=1
@@ -94,20 +110,22 @@ fi
 [[ $@ =~ "-p" || $@ =~ "--patches" ]] && F_PATCHES=1
 [[ $@ =~ "-r" || $@ =~ "--bore" ]] && F_BORE=1
 [[ $@ =~ "-v" || $@ =~ "--v4l2" ]] && F_V4L2=1
+[[ $@ =~ "-y" || $@ =~ "--flags" ]] && F_PRINT_FLAGS=1
 [[ $@ =~ "-z" || $@ =~ "--vars" ]] && F_PRINT_VARS=1
 
 # Flag presets
 if [[ $@ =~ "--preset-configure" ]]; then
+	F_SKIP_CFG=0			# Necessary as "-c" is detected (override)
 	F_CLEARLINUX_PATCHES=1
 	F_MENUCONFIG=1
 	F_CPU_OPTS=1
 	F_PATCHES=1
 	F_BORE=1
 else if [[ $@ =~ "--preset-build" ]]; then
+	F_SKIP_BUILD=0			# Necessary as "-b" is detected (override)
 	F_FASTMATH=1
 	F_GRAPHITE=1
 	F_CLEARLINUX_PATCHES=1
-	F_MENUCONFIG=0
 	F_CPU_OPTS=1
 	F_PATCHES=1
 	F_BORE=1
@@ -115,10 +133,10 @@ fi
 fi
 
 # Print help
-if [ $F_PRINT_HELP ]; then
+if [ $F_PRINT_HELP = 1 ]; then
 	printf "Flags:
 -b,--skip-build     Do not build the Kernel
--c,--skip-cfg       Do not copy the Kernel config from this directory
+-c,--skip-cfg       Do not copy the Kernel config to Kernel directory
 -d,--distcc         Use distcc to speed up compilation /!\\
 -e,--ccache         Use ccache to speed up compilation /!\\
 -f,--fastmath       Build Kernel with Unsafe Fast Math [*]
@@ -130,6 +148,7 @@ if [ $F_PRINT_HELP ]; then
 -p,--patches        Apply provided patches (recommended) [*]
 -r,--bore           Build Kernel with BORE scheduler [*]
 -v,--v4l2           Build v4l2loopback Kernel module
+-y,--flags          Print flags and exit
 -z,--vars           Print variables and exit
 
 Presets (mutually exclusive):
@@ -164,8 +183,31 @@ Gentoo users:
 	exit
 fi
 
+# Print flags
+if [ $F_PRINT_FLAGS = 1 ]; then
+	printf "Flags:
+F_SKIP_BUILD=$F_SKIP_BUILD
+F_SKIP_CFG=$F_SKIP_CFG
+F_DISTCC=$F_DISTCC
+F_CCACHE=$F_CCACHE
+F_FASTMATH=$F_FASTMATH
+F_GRAPHITE=$F_GRAPHITE
+F_PRINT_HELP=$F_PRINT_HELP
+F_CLEARLINUX_PATCHES=$F_CLEARLINUX_PATCHES
+F_MENUCONFIG=$F_MENUCONFIG
+F_CPU_OPTS=$F_CPU_OPTS
+F_PATCHES=$F_PATCHES
+F_BORE=$F_BORE
+F_V4L2=$F_V4L2
+F_PRINT_VARS=$F_PRINT_VARS
+F_PRINT_FLAGS=$F_PRINT_FLAGS
+"
+
+	exit
+fi
+
 # Print variables
-if [ $F_PRINT_VARS ]; then
+if [ $F_PRINT_VARS = 1 ]; then
 	printf "Variables:
 CONFIGFILE=$CONFIGFILE
 JOBS=$JOBS
@@ -195,7 +237,7 @@ done
 rm *.patch
 
 # Copy Kernel config
-if ! [ $F_SKIP_CFG ]; then
+if [ $F_SKIP_CFG = 0 ]; then
 	echo "Copying config" &&
 	cp "$USRDIR/$CONFIGFILE" "$KERNELDIR/config" &&
 	cp config .config ||
@@ -205,7 +247,7 @@ else
 fi
 
 # Copy Clear Linux patches
-if [ $F_CLEARLINUX_PATCHES ]; then
+if [ $F_CLEARLINUX_PATCHES = 1 ]; then
 	CLEAR_PATCHES=(
 		"0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch"
 		"0102-increase-the-ext4-default-commit-age.patch"
@@ -231,7 +273,7 @@ if [ $F_CLEARLINUX_PATCHES ]; then
 fi
 
 # Copy CPU family opts patches
-if [ $F_CPU_OPTS ]; then
+if [ $F_CPU_OPTS = 1 ]; then
 	# Check if CPU family optimizations directory exists
 	if [ ! -d "$CFODIR" ]; then
 		echo "Could not find CPU family optimisations directory."
@@ -243,13 +285,13 @@ if [ $F_CPU_OPTS ]; then
 fi
 
 # Copy provided patches
-if [ $F_PATCHES ]; then
+if [ $F_PATCHES = 1 ]; then
 	echo "Copying provided patches"
 	cp $PATCHDIR/*.patch $KERNELDIR || exit
 fi
 
 # Copy BORE sched patch
-if [ $F_BORE ]; then
+if [ $F_BORE = 1 ]; then
 	# Extract the major version
 	# Example: KVER: 6.11.7, KVER_MAJ: 6.11
 	KVER_MAJ="${KVER%.*}"
@@ -279,18 +321,18 @@ echo "Copying existing Kernel config to config.last" && cp .config config.last |
 echo "Running make clean" && make $JOBS clean || exit
 
 # make menuconfig
-if [ $F_MENUCONFIG ]; then
+if [ $F_MENUCONFIG = 1 ]; then
 	make $JOBS menuconfig
 	exit
 fi
 
 # Skip Kernel build?
-if ! [ $F_SKIP_BUILD ]; then
+if [ $F_SKIP_BUILD = 0 ]; then
 	# Don't use build timestap (slows down cache)
 	export KBUILD_BUILD_TIMESTAMP=""
 
 	# Check if we can use ccache
-	if [ $F_CCACHE ]; then
+	if [ $F_CCACHE = 1 ]; then
 		echo "Using ccache..."
 		cc="ccache gcc"
 	else
@@ -298,7 +340,7 @@ if ! [ $F_SKIP_BUILD ]; then
 	fi
 
 	# Check if we can use distcc
-	if [ $F_DISTCC ]; then
+	if [ $F_DISTCC = 1 ]; then
 		echo "Using distcc..."
 		cc="distcc $cc"
 	fi
@@ -307,14 +349,14 @@ if ! [ $F_SKIP_BUILD ]; then
 	echo "Compiler command (CC): $cc"
 
 	# Check if Unsafe Fast Math is enabled
-	if [ $F_FASTMATH ]; then
+	if [ $F_FASTMATH = 1 ]; then
 		MATH="-fno-signed-zeros -fno-trapping-math -fassociative-math -freciprocal-math -fno-math-errno -ffinite-math-only -fno-rounding-math -fno-signaling-nans -fcx-limited-range -fexcess-precision=fast"
 	else
 		MATH=""
 	fi
 
 	# Check if Graphite is enabled
-	if [ $F_GRAPHITE ]; then
+	if [ $F_GRAPHITE = 1 ]; then
 		GRAPHITE="-fgraphite-identity -floop-nest-optimize"
 	else
 		GRAPHITE=""
@@ -369,7 +411,7 @@ if ! [ $F_SKIP_BUILD ]; then
 	echo "Total time (Kernel build + install): $(date -d@$build_total -u +%H:%M:%S)."
 
 	# V4L2loopback
-	if [ $F_V4L2 ]; then
+	if [ $F_V4L2 = 1 ]; then
 		# Check if V4L2DIR exists
 		if [ ! -d "$V4L2DIR" ]; then
 			echo "Could not find v4l2loopback directory.";
