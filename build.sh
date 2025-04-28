@@ -11,7 +11,7 @@ CUSTDIR="/usr/src/usr-kernel"
 
 # Kernel versions
 # NOTE: $KVER MUST be of the form x.y.z, otherwise things WILL break!
-KVER="6.14.0"	# Primary Kernel version
+KVER="6.14.4"	# Primary Kernel version
 PVER="-gentoo"	# Kernel "patch" version
 
 # Set this variable if your Kernel is not located under /usr/src/
