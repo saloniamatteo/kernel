@@ -153,10 +153,10 @@ if [ $F_PRINT_HELP = 1 ]; then
 
 Presets (mutually exclusive):
 --preset-configure	Selects the following flags:
-			-f, -g, -l, -o, -p, -r
+			-l, -m, -o, -p, -r
 
 --preset-build		Selects the following flags:
-			-l, -m, -o, -p, -r
+			-f, -g, -l, -o, -p, -r
 
 Note:
   - All options marked with '[*]', when enabled, may improve
