@@ -11,7 +11,7 @@ CUSTDIR="/usr/src/usr-kernel"
 
 # Kernel versions
 # NOTE: $KVER MUST be of the form x.y.z, otherwise things WILL break!
-KVER="6.14.5"	# Primary Kernel version
+KVER="6.15.0"	# Primary Kernel version
 PVER="-gentoo"	# Kernel "patch" version
 
 # Set this variable if your Kernel is not located under /usr/src/
@@ -19,11 +19,11 @@ PVER="-gentoo"	# Kernel "patch" version
 #KERNELDIR=""
 
 # How many threads to use to build Kernel
-# T470p = -j6
-# T440p = -j4
+# T470p, T440p = -j4
 # PC = -j9
+# T470p + PC (distcc) = -j27 -l4
 # You can set any value you like.
-JOBS="-j6"
+JOBS="-j27 -l4"
 
 # Name of the Kernel config file under $CUSTDIR/$KERNVER
 # Choose between "config", "config.t440p", "config.pc"
@@ -42,8 +42,6 @@ PATCHDIR="$CUSTDIR/patches"
 BOREDIR="$CUSTDIR/bore-scheduler"
 # Location of v4l2loopback directory
 V4L2DIR="$CUSTDIR/v4l2loopback"
-# Location of CPU family optimizations directory
-CFODIR="$CUSTDIR/kernel_compiler_patch"
 # Location of Kernel-specific user directory
 USRDIR="$CUSTDIR/$KERNVER"
 
@@ -90,7 +88,6 @@ F_GRAPHITE=0			# Build Kernel with Graphite
 F_PRINT_HELP=0			# Print help and exit
 F_CLEARLINUX_PATCHES=0	# Enable Clear Linux patches
 F_MENUCONFIG=0			# Run 'make menuconfig' in Kernel directory and exit
-F_CPU_OPTS=0			# Build Kernel with CPU family optimisations
 F_PATCHES=0				# Apply provided patches (recommended)
 F_BORE=0				# Build Kernel with BORE scheduler
 F_V4L2=0				# Build v4l2loopback Kernel module
@@ -106,7 +103,6 @@ F_PRINT_FLAGS=0			# Print variables and exit
 [[ $@ =~ "-h" || $@ =~ "--help" ]] && F_PRINT_HELP=1
 [[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]] && F_CLEARLINUX_PATCHES=1
 [[ $@ =~ "-m" || $@ =~ "--menuconfig" ]] && F_MENUCONFIG=1
-[[ $@ =~ "-o" || $@ =~ "--cpu-opts" ]] && F_CPU_OPTS=1
 [[ $@ =~ "-p" || $@ =~ "--patches" ]] && F_PATCHES=1
 [[ $@ =~ "-r" || $@ =~ "--bore" ]] && F_BORE=1
 [[ $@ =~ "-v" || $@ =~ "--v4l2" ]] && F_V4L2=1
@@ -118,7 +114,6 @@ if [[ $@ =~ "--preset-configure" ]]; then
 	F_SKIP_CFG=0			# Necessary as "-c" is detected (override)
 	F_CLEARLINUX_PATCHES=1
 	F_MENUCONFIG=1
-	F_CPU_OPTS=1
 	F_PATCHES=1
 	F_BORE=1
 else if [[ $@ =~ "--preset-build" ]]; then
@@ -126,7 +121,6 @@ else if [[ $@ =~ "--preset-build" ]]; then
 	F_FASTMATH=1
 	F_GRAPHITE=1
 	F_CLEARLINUX_PATCHES=1
-	F_CPU_OPTS=1
 	F_PATCHES=1
 	F_BORE=1
 fi
@@ -144,7 +138,6 @@ if [ $F_PRINT_HELP = 1 ]; then
 -h,--help           Print this help and exit
 -l,--clearl-ps      Enable Clear Linux patches [*]
 -m,--menuconfig     Run 'make menuconfig' in Kernel directory and exit
--o,--cpu-opts       Build Kernel with CPU family optimisations [*]
 -p,--patches        Apply provided patches (recommended) [*]
 -r,--bore           Build Kernel with BORE scheduler [*]
 -v,--v4l2           Build v4l2loopback Kernel module
@@ -153,17 +146,17 @@ if [ $F_PRINT_HELP = 1 ]; then
 
 Presets (mutually exclusive):
 --preset-configure	Selects the following flags:
-			-l, -m, -o, -p, -r
+			-l, -m, -p, -r
 
 --preset-build		Selects the following flags:
-			-f, -g, -l, -o, -p, -r
+			-f, -g, -l, -p, -r
 
 Note:
   - All options marked with '[*]', when enabled, may improve
     Kernel performance, whether it may be CPU, I/O, network, etc.
   - It is highly recommended to enable Clear Linux patches,
-    CPU family optimizations, provided patches, as well as the BORE scheduler.
-	Unsafe fast math may have a negligible performance increase,
+    provided patches, as well as the BORE scheduler.
+	Unsafe fast math may or may not bring a performance increase,
 	just like Graphite, depending on your system. Use at your own risk!
   - If you're planning on using v4l2loopback with your own config,
     please read: https://github.com/umlaeute/v4l2loopback/discussions/604
@@ -195,7 +188,6 @@ F_GRAPHITE=$F_GRAPHITE
 F_PRINT_HELP=$F_PRINT_HELP
 F_CLEARLINUX_PATCHES=$F_CLEARLINUX_PATCHES
 F_MENUCONFIG=$F_MENUCONFIG
-F_CPU_OPTS=$F_CPU_OPTS
 F_PATCHES=$F_PATCHES
 F_BORE=$F_BORE
 F_V4L2=$F_V4L2
@@ -270,18 +262,6 @@ if [ $F_CLEARLINUX_PATCHES = 1 ]; then
 		echo "Copying $patch"
 		cp "$CLEARDIR/$patch" "$KERNELDIR" || exit
 	done
-fi
-
-# Copy CPU family opts patches
-if [ $F_CPU_OPTS = 1 ]; then
-	# Check if CPU family optimizations directory exists
-	if [ ! -d "$CFODIR" ]; then
-		echo "Could not find CPU family optimisations directory."
-		exit
-	fi
-
-	echo "Copying CPU family optimisation patches"
-	cp "$CFODIR/more-ISA-levels-and-uarches-for-kernel-6.1.79+.patch" "$KERNELDIR" || exit
 fi
 
 # Copy provided patches
@@ -377,13 +357,32 @@ if [ $F_SKIP_BUILD = 0 ]; then
 	#   to take place.
 	OPTS="-fivopts -fmodulo-sched -floop-interchange"
 
+	# Get this system's -march & -mtune values
+	# This replaces the patches from
+	# https://github.com/graysky2/kernel_compiler_patch,
+	# removing the need to manually patch the kernel everytime.
+	# Avoid using -march=native & -mtune=native, as it WILL
+	# lead to incorrect optimizations when using distcc.
+	CPU_TARGET=$(gcc -march=native -mtune=native -Q --help=target)
+	CPU_MARCH=$(grep -m1 "\-march=" <<<$CPU_TARGET | awk '{print $2}')
+	CPU_MTUNE=$(grep -m1 "\-mtune=" <<<$CPU_TARGET | awk '{print $2}')
+	CPU_OPTS="-march=${CPU_MARCH} -mtune=${CPU_MTUNE}"
+
+	# Kernel C & C++ build flags
+	# CPU_OPTS: -march & -mtune
+	# MATH: unsafe fast math
+	# GRAPHITE: graphite
+	# OPTS: extra optimization flags
+	OUR_KCFLAGS=" $CPU_OPTS $MATH $GRAPHITE $OPTS"
+
 	# Kernel build timer
 	build_start=$(date "+%s")
 	echo "Started build at $(date --date=@$build_start)"
 	echo "Building Kernel Version $(make kernelrelease)"
+	echo "CPU targets: $CPU_OPTS"
 
 	# Build Kernel
-	make CC="$cc" KCFLAGS="$KCFLAGS $MATH $GRAPHITE $OPTS" $JOBS || exit
+	make CC="$cc" KCFLAGS="$KCFLAGS $OUR_KCFLAGS" KCPPFLAGS="$KCPPFLAGS $OUR_KCFLAGS" $JOBS || exit
 	make CC="$cc" $JOBS modules_prepare || exit
 
 	# Kernel build timer
