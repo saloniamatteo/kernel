@@ -5,14 +5,10 @@ where they were downloaded from, and what Kernel they target.
  Matteo Salonia    https://salonia.it   https://github.com/saloniamatteo
 =========================================================================
 
-0001-address-masking	Various address masking fixes/improvements
-						Patch downloaded from CachyOS:
-						https://github.com/CachyOS/kernel-patches
-
-0002-bbv3				BBRv3 support. (Google)
-						Patch downloaded from CachyOS:
-						https://github.com/CachyOS/kernel-patches
-
-0003-glitched-cfs		Add HZ_500 & HZ_750
+0001-glitched-cfs		Add HZ_500 & HZ_750
 						Patch downloaded from Linux-TKG:
 						https://github.com/Frogging-Family/linux-tkg
+
+0002-bbr3				BBRv3 support (Google)
+						Patch downloaded from CachyOS:
+						https://github.com/CachyOS/kernel-patches
