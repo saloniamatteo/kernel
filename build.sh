@@ -78,57 +78,24 @@ if [ ! -f "$USRDIR/config" ]; then
 	exit
 fi
 
-# Set variables based on flag status
-F_SKIP_BUILD=0			# Do not build the kernel
-F_SKIP_CFG=0			# Do not copy the Kernel config to Kernel directory
-F_DISTCC=0				# Use distcc to speed up compilation
-F_CCACHE=0				# Use ccache to speed up compilation
-F_FASTMATH=0			# Build Kernel with Unsafe Fast Math
-F_GRAPHITE=0			# Build Kernel with Graphite
-F_PRINT_HELP=0			# Print help and exit
-F_CLEARLINUX_PATCHES=0	# Enable Clear Linux patches
-F_MENUCONFIG=0			# Run 'make menuconfig' in Kernel directory and exit
-F_PATCHES=0				# Apply provided patches (recommended)
-F_BORE=0				# Build Kernel with BORE scheduler
-F_V4L2=0				# Build v4l2loopback Kernel module
-F_PRINT_VARS=0			# Print flags and exit
-F_PRINT_FLAGS=0			# Print variables and exit
+# Parse options
+# -o: short options
+# -l: long options
+# -n: program name
+# -------------------
+# Note that we use "$@" to let each command-line parameter expand to a
+# separate word. The quotes around "$@" are essential!
+# We need this as the 'eval set --' would nuke the return value of getopt.
+OPTS=$(getopt \
+	-o 'bcdefghlmprvyz' \
+	-l 'skip-build,skip-cfg,distcc,ccache,fastmath,graphite,help,clearl-ps,menuconfig,patches,bore,v4l2,flags,vars,preset-configure,preset-build' \
+	-- "$@"
+)
 
-[[ $@ =~ "-b" || $@ =~ "--skip-build" ]] && F_SKIP_BUILD=1
-[[ $@ =~ "-c" || $@ =~ "--skip-cfg" ]] && F_SKIP_CFG=1
-[[ $@ =~ "-d" || $@ =~ "--distcc" ]] && F_DISTCC=1
-[[ $@ =~ "-e" || $@ =~ "--ccache" ]] && F_CCACHE=1
-[[ $@ =~ "-f" || $@ =~ "--fastmath" ]] && F_FASTMATH=1
-[[ $@ =~ "-g" || $@ =~ "--graphite" ]] && F_GRAPHITE=1
-[[ $@ =~ "-h" || $@ =~ "--help" ]] && F_PRINT_HELP=1
-[[ $@ =~ "-l" || $@ =~ "--clearl-ps" ]] && F_CLEARLINUX_PATCHES=1
-[[ $@ =~ "-m" || $@ =~ "--menuconfig" ]] && F_MENUCONFIG=1
-[[ $@ =~ "-p" || $@ =~ "--patches" ]] && F_PATCHES=1
-[[ $@ =~ "-r" || $@ =~ "--bore" ]] && F_BORE=1
-[[ $@ =~ "-v" || $@ =~ "--v4l2" ]] && F_V4L2=1
-[[ $@ =~ "-y" || $@ =~ "--flags" ]] && F_PRINT_FLAGS=1
-[[ $@ =~ "-z" || $@ =~ "--vars" ]] && F_PRINT_VARS=1
+usage() {
+	printf "Usage: $0 [options]
 
-# Flag presets
-if [[ $@ =~ "--preset-configure" ]]; then
-	F_SKIP_CFG=0			# Necessary as "-c" is detected (override)
-	F_CLEARLINUX_PATCHES=1
-	F_MENUCONFIG=1
-	F_PATCHES=1
-	F_BORE=1
-else if [[ $@ =~ "--preset-build" ]]; then
-	F_SKIP_BUILD=0			# Necessary as "-b" is detected (override)
-	F_FASTMATH=1
-	F_GRAPHITE=1
-	F_CLEARLINUX_PATCHES=1
-	F_PATCHES=1
-	F_BORE=1
-fi
-fi
-
-# Print help
-if [ $F_PRINT_HELP = 1 ]; then
-	printf "Flags:
+Options:
 -b,--skip-build     Do not build the Kernel
 -c,--skip-cfg       Do not copy the Kernel config to Kernel directory
 -d,--distcc         Use distcc to speed up compilation /!\\
@@ -144,12 +111,12 @@ if [ $F_PRINT_HELP = 1 ]; then
 -y,--flags          Print flags and exit
 -z,--vars           Print variables and exit
 
-Presets (mutually exclusive):
---preset-configure	Selects the following flags:
-			-l, -m, -p, -r
+Presets:
+--preset-configure  Selects the following flags:
+                    -l, -m, -p, -r
 
---preset-build		Selects the following flags:
-			-f, -g, -l, -p, -r
+--preset-build      Selects the following flags:
+                    -f, -g, -l, -p, -r
 
 Note:
   - All options marked with '[*]', when enabled, may improve
@@ -173,6 +140,157 @@ Gentoo users:
   system preferences (e.g. initramfs->dracut, bootloader->GRUB).
   https://packages.gentoo.org/packages/sys-kernel/installkernel
 "
+}
+
+help() {
+	echo "Arg: $F_HELP_ARG"
+}
+
+if [ $? -ne 0 ]; then
+	usage >&2
+	exit 1
+fi
+
+# If no parameters have been provided, print usage & exit
+if [[ "$OPTS" = " --" ]]; then
+	usage >&2
+	exit 1
+fi
+
+# Reset the positional parameters to the parsed options
+eval set -- "$OPTS"
+unset OPTS
+
+F_SKIP_BUILD=0			# Do not build the kernel
+F_SKIP_CFG=0			# Do not copy the Kernel config to Kernel directory
+F_DISTCC=0				# Use distcc to speed up compilation
+F_CCACHE=0				# Use ccache to speed up compilation
+F_FASTMATH=0			# Build Kernel with Unsafe Fast Math
+F_GRAPHITE=0			# Build Kernel with Graphite
+F_PRINT_HELP=0			# Print help and exit
+F_HELP_ARG=''			# Help with this argument
+F_CLEARLINUX_PATCHES=0	# Enable Clear Linux patches
+F_MENUCONFIG=0			# Run 'make menuconfig' in Kernel directory and exit
+F_PATCHES=0				# Apply provided patches (recommended)
+F_BORE=0				# Build Kernel with BORE scheduler
+F_V4L2=0				# Build v4l2loopback Kernel module
+F_PRINT_VARS=0			# Print flags and exit
+F_PRINT_FLAGS=0			# Print variables and exit
+
+# Process options
+while true; do
+	case "$1" in
+		'-b' | '--skip-build')
+			F_SKIP_BUILD=1
+			shift
+			continue
+			;;
+		'-c' | '--skip-cfg')
+			F_SKIP_CFG=1
+			shift
+			continue
+			;;
+		'-d' | '--distcc')
+			F_DISTCC=1
+			shift
+			continue
+			;;
+		'-e' | '--ccache')
+			F_CCACHE=1
+			shift
+			continue
+			;;
+		'-f' | '--fastmath')
+			F_FASTMATH=1
+			shift
+			continue
+			;;
+		'-g' | '--graphite')
+			F_GRAPHITE=1
+			shift
+			continue
+			;;
+		'-h' | '--help')
+			F_PRINT_HELP=1
+
+			case "$2" in
+				'')
+					F_HELP_ARG=""
+					;;
+				*)
+					F_HELP_ARG="$2"
+					;;
+			esac
+			shift 2
+			continue
+			;;
+		'-l' | '--clearl-ps')
+			F_CLEARLINUX_PATCHES=1
+			shift
+			continue
+			;;
+		'-m' | '--menuconfig')
+			F_MENUCONFIG=1
+			shift
+			continue
+			;;
+		'-p' | '--patches')
+			F_PATCHES=1
+			shift
+			continue
+			;;
+		'-r' | '--bore')
+			F_BORE=1
+			shift
+			continue
+			;;
+		'-v' | '--v4l2')
+			F_V4L2=1
+			shift
+			continue
+			;;
+		'-y' | '--flags')
+			F_PRINT_FLAGS=1
+			shift
+			continue
+			;;
+		'-z' | '--vars')
+			F_PRINT_VARS=1
+			shift
+			continue
+			;;
+		'--preset-configure')
+			F_CLEARLINUX_PATCHES=1
+			F_MENUCONFIG=1
+			F_PATCHES=1
+			F_BORE=1
+			shift
+			continue
+			;;
+		'--preset-build')
+			F_SKIP_BUILD=0			# Necessary as "-b" is detected (override)
+			F_FASTMATH=1
+			F_GRAPHITE=1
+			F_CLEARLINUX_PATCHES=1
+			F_PATCHES=1
+			F_BORE=1
+			shift
+			continue
+			;;
+		'--')
+			shift
+			break
+			;;
+		*)
+			echo "Internal error!" >&2
+			exit 1
+			;;
+	esac
+done
+
+# Print help
+if [ $F_PRINT_HELP = 1 ]; then
+	help
 	exit
 fi
 
@@ -186,6 +304,7 @@ F_CCACHE=$F_CCACHE
 F_FASTMATH=$F_FASTMATH
 F_GRAPHITE=$F_GRAPHITE
 F_PRINT_HELP=$F_PRINT_HELP
+F_HELP_ARG=$F_HELP_ARG
 F_CLEARLINUX_PATCHES=$F_CLEARLINUX_PATCHES
 F_MENUCONFIG=$F_MENUCONFIG
 F_PATCHES=$F_PATCHES
