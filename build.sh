@@ -142,10 +142,6 @@ Gentoo users:
 "
 }
 
-help() {
-	echo "Arg: $F_HELP_ARG"
-}
-
 if [ $? -ne 0 ]; then
 	usage >&2
 	exit 1
@@ -212,16 +208,7 @@ while true; do
 			;;
 		'-h' | '--help')
 			F_PRINT_HELP=1
-
-			case "$2" in
-				'')
-					F_HELP_ARG=""
-					;;
-				*)
-					F_HELP_ARG="$2"
-					;;
-			esac
-			shift 2
+			shift
 			continue
 			;;
 		'-l' | '--clearl-ps')
@@ -290,7 +277,7 @@ done
 
 # Print help
 if [ $F_PRINT_HELP = 1 ]; then
-	help
+	usage
 	exit
 fi
 
