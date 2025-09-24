@@ -23,7 +23,7 @@ PVER="-gentoo"	# Kernel "patch" version
 # PC = -j9
 # T470p + PC (distcc) = -j27 -l4
 # You can set any value you like.
-JOBS="-j27 -l4"
+JOBS="-j4"
 
 # Name of the Kernel config file under $CUSTDIR/$KERNVER
 # Choose between "config", "config.t440p", "config.pc"
@@ -34,10 +34,8 @@ CONFIGFILE="config"
 # Do not modify these unless you know what you're doing.
 # Full Kernel version
 KERNVER="${KVER}${PVER}"
-# Location of Clear Linux patch directory
-CLEARDIR="$CUSTDIR/clear-patches"
 # Location of included patches
-PATCHDIR="$CUSTDIR/patches"
+PATCHDIR="$CUSTDIR/tkg-patches"
 # Location of BORE sched patch
 BOREDIR="$CUSTDIR/bore-scheduler"
 # Location of v4l2loopback directory
@@ -88,7 +86,7 @@ fi
 # We need this as the 'eval set --' would nuke the return value of getopt.
 OPTS=$(getopt \
 	-o 'bcdefghlmprvyz' \
-	-l 'skip-build,skip-cfg,distcc,ccache,fastmath,graphite,help,clearl-ps,menuconfig,patches,bore,v4l2,flags,vars,preset-configure,preset-build' \
+	-l 'skip-build,skip-cfg,distcc,ccache,fastmath,graphite,help,menuconfig,patches,bore,v4l2,flags,vars,preset-configure,preset-build' \
 	-- "$@"
 )
 
@@ -103,9 +101,8 @@ Options:
 -f,--fastmath       Build Kernel with Unsafe Fast Math [*]
 -g,--graphite       Build Kernel with Graphite [*]
 -h,--help           Print this help and exit
--l,--clearl-ps      Enable Clear Linux patches [*]
 -m,--menuconfig     Run 'make menuconfig' in Kernel directory and exit
--p,--patches        Apply provided patches (recommended) [*]
+-p,--patches        Apply patches (recommended) [*]
 -r,--bore           Build Kernel with BORE scheduler [*]
 -v,--v4l2           Build v4l2loopback Kernel module
 -y,--flags          Print flags and exit
@@ -113,18 +110,18 @@ Options:
 
 Presets:
 --preset-configure  Selects the following flags:
-                    -l, -m, -p, -r
+                    -m, -p, -r
 
 --preset-build      Selects the following flags:
-                    -f, -g, -l, -p, -r
+                    -f, -g, -p, -r
 
 Note:
   - All options marked with '[*]', when enabled, may improve
     Kernel performance, whether it may be CPU, I/O, network, etc.
-  - It is highly recommended to enable Clear Linux patches,
-    provided patches, as well as the BORE scheduler.
-	Unsafe fast math may or may not bring a performance increase,
-	just like Graphite, depending on your system. Use at your own risk!
+  - It is highly recommended to build with provided patches,
+    as well as the BORE scheduler. Unsafe fast math may or
+	may not bring a performance increase, just like Graphite,
+	depending on your system. Use at your own risk!
   - If you're planning on using v4l2loopback with your own config,
     please read: https://github.com/umlaeute/v4l2loopback/discussions/604
 
@@ -164,13 +161,16 @@ F_CCACHE=0				# Use ccache to speed up compilation
 F_FASTMATH=0			# Build Kernel with Unsafe Fast Math
 F_GRAPHITE=0			# Build Kernel with Graphite
 F_PRINT_HELP=0			# Print help and exit
-F_CLEARLINUX_PATCHES=0	# Enable Clear Linux patches
 F_MENUCONFIG=0			# Run 'make menuconfig' in Kernel directory and exit
 F_PATCHES=0				# Apply provided patches (recommended)
 F_BORE=0				# Build Kernel with BORE scheduler
 F_V4L2=0				# Build v4l2loopback Kernel module
 F_PRINT_VARS=0			# Print flags and exit
 F_PRINT_FLAGS=0			# Print variables and exit
+
+# Extract the major version
+# Example: KVER: 6.11.7, KVER_MAJ: 6.11
+KVER_MAJ="${KVER%.*}"
 
 # Process options
 while true; do
@@ -207,11 +207,6 @@ while true; do
 			;;
 		'-h' | '--help')
 			F_PRINT_HELP=1
-			shift
-			continue
-			;;
-		'-l' | '--clearl-ps')
-			F_CLEARLINUX_PATCHES=1
 			shift
 			continue
 			;;
@@ -290,7 +285,6 @@ F_CCACHE=$F_CCACHE
 F_FASTMATH=$F_FASTMATH
 F_GRAPHITE=$F_GRAPHITE
 F_PRINT_HELP=$F_PRINT_HELP
-F_CLEARLINUX_PATCHES=$F_CLEARLINUX_PATCHES
 F_MENUCONFIG=$F_MENUCONFIG
 F_PATCHES=$F_PATCHES
 F_BORE=$F_BORE
@@ -309,9 +303,9 @@ CONFIGFILE=$CONFIGFILE
 JOBS=$JOBS
 KVER=$KVER
 PVER=$PVER
+KVER_MAJ=$KVER_MAJ
 KERNVER=$KERNVER
 CUSTDIR=$CUSTDIR
-CLEARDIR=$CLEARDIR
 PATCHDIR=$PATCHDIR
 BOREDIR=$BOREDIR
 V4L2DIR=$V4L2DIR
@@ -343,48 +337,52 @@ else
 fi
 
 # Copy Clear Linux patches
-if [ $F_CLEARLINUX_PATCHES = 1 ]; then
-	CLEAR_PATCHES=(
-		"0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch"
-		"0102-increase-the-ext4-default-commit-age.patch"
-		"0104-pci-pme-wakeups.patch"
-		"0106-intel_idle-tweak-cpuidle-cstates.patch"
-		"0108-smpboot-reuse-timer-calibration.patch"
-		"0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch"
-		"0120-do-accept-in-LIFO-order-for-cache-efficiency.patch"
-		"0121-locking-rwsem-spin-faster.patch"
-		"0122-ata-libahci-ignore-staggered-spin-up.patch"
-		"0131-add-a-per-cpu-minimum-high-watermark-an-tune-batch-s.patch"
-		"0135-initcall-only-print-non-zero-initcall-debug-to-speed.patch"
-		"0136-crypto-kdf-make-the-module-init-call-a-late-init-cal.patch"
-		"0158-clocksource-only-perform-extended-clocksource-checks.patch"
-		"0161-ACPI-align-slab-buffers-for-improved-memory-performa.patch"
+if [ $F_PATCHES = 1 ]; then
+	# Enable the following patches if you want a more responsive Kernel,
+	# ideal for gaming:
+	# - 0003-glitched-base.patch
+	# - 0003-glitched-eevdf-additions.patch
+	# - 0009-prjc.patch
+	#
+	# Enable "0012-linux-hardened.patch" to build a hardened Kernel.
+	# "0013-*" patches shouldn't be needed.
+	#
+	# Enable "0014-OpenRGB.patch" to add support for the Nuvoton NCT6775 controller
+	TKG_PATCHES=(
+		"0001-add-sysctl-to-disallow-unprivileged-CLONE_NEWUSER-by.patch"
+		# This patch is chosen by the -r/--bore flag.
+		#"0001-bore.patch"
+		"0002-clear-patches.patch"
+		#"0003-glitched-base.patch"
+		"0003-glitched-cfs.patch"
+		#"0003-glitched-eevdf-additions.patch"
+		"0006-add-acs-overrides_iommu.patch"
+		#"0009-prjc.patch"
+		#"0012-linux-hardened.patch"
+		"0012-misc-additions.patch"
+		#"0013-fedora-rpm.patch"
+		#"0013-fedora-strip-modules.patch"
+		#"0013-gentoo-kconfig.patch"
+		#"0013-gentoo-print-loaded-firmware.patch"
+		#"0013-optimize_harder_O3.patch"
+		#"0013-suse-additions.patch"
+		#"0014-OpenRGB.patch"
 	)
 
-	echo "Copying Clear Linux patches"
-	for patch in ${CLEAR_PATCHES[@]}; do
+	echo "Copying patches"
+	for patch in ${TKG_PATCHES[@]}; do
 		echo "Copying $patch"
-		cp "$CLEARDIR/$patch" "$KERNELDIR" || exit
+		cp "$PATCHDIR/linux-tkg-patches/$KVER_MAJ/$patch" "$KERNELDIR" || exit
 	done
-fi
-
-# Copy provided patches
-if [ $F_PATCHES = 1 ]; then
-	echo "Copying provided patches"
-	cp $PATCHDIR/*.patch $KERNELDIR || exit
 fi
 
 # Copy BORE sched patch
 if [ $F_BORE = 1 ]; then
-	# Extract the major version
-	# Example: KVER: 6.11.7, KVER_MAJ: 6.11
-	KVER_MAJ="${KVER%.*}"
-
 	echo "Copying BORE patch"
-	cp $BOREDIR/patches/stable/linux-$KVER_MAJ-bore/*patch "$KERNELDIR" || exit
+	cp "$PATCHDIR/linux-tkg-patches/$KVER_MAJ/0001-bore.patch" "$KERNELDIR" || exit
 fi
 
-echo "Applying Clear Linux and/or user patches (if any)"
+echo "Applying patches"
 for p in *.patch; do
 	echo "Applying patch '$p'..." && patch -Np1 -i $p
 done
