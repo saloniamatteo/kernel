@@ -1,9 +1,6 @@
 [submodule "v4l2loopback"]
 	path = v4l2loopback
 	url = https://github.com/umlaeute/v4l2loopback
-[submodule "clear-patches"]
-	path = clear-patches
-	url = https://github.com/clearlinux-pkgs/linux
-[submodule "bore-scheduler"]
-	path = bore-scheduler
-	url = https://github.com/firelzrd/bore-scheduler
+[submodule "tkg-patches"]
+	path = tkg-patches
+	url = https://github.com/Frogging-Family/linux-tkg
