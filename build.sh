@@ -21,8 +21,17 @@ PVER="-gentoo"	# Kernel "patch" version
 # How many threads to use to build Kernel
 # T470p, T440p = -j4
 # PC = -j9
-# T470p + PC (distcc) = -j27 -l4
+# ---
+# When using distcc, use the following formula to set up "-jX -lY":
+# -jX: 2 * (local + remote cores) + 1
+# -lY: Y is the number of local cores
+#
+# Example: T470p (4 cores) + PC (6 cores)
+# -jX: 2 * (4 + 6) + 1 = -j21
+# -lY: 4 = -l4
+# ---
 # You can set any value you like.
+#JOBS="-j21 -l4"
 JOBS="-j4"
 
 # Name of the Kernel config file under $CUSTDIR/$KERNVER
