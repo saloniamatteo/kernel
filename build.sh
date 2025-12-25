@@ -11,7 +11,7 @@ CUSTDIR="/usr/src/usr-kernel"
 
 # Kernel versions
 # NOTE: $KVER MUST be of the form x.y.z, otherwise things WILL break!
-KVER="6.18.0"	# Primary Kernel version
+KVER="6.18.2"	# Primary Kernel version
 PVER="-gentoo"	# Kernel "patch" version
 
 # Set this variable if your Kernel is not located under /usr/src/
@@ -26,12 +26,12 @@ PVER="-gentoo"	# Kernel "patch" version
 # -jX: 2 * (local + remote cores) + 1
 # -lY: Y is the number of local cores
 #
-# Example: T470p (4 cores) + PC (6 cores)
-# -jX: 2 * (4 + 6) + 1 = -j21
+# Example: T470p (4 cores) + PC (6 cores) + T440p (2 cores)
+# -jX: 2 * (4 + 6 + 2) + 1 = -j25
 # -lY: 4 = -l4
 # ---
 # You can set any value you like.
-#JOBS="-j21 -l4"
+#JOBS="-j25 -l4"
 JOBS="-j4"
 
 # Name of the Kernel config file under $CUSTDIR/$KERNVER
